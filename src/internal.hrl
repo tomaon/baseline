@@ -15,6 +15,7 @@
 %% Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 %% =============================================================================
 
+-type filename() :: file:filename().
 -type property() :: proplists:property().
 -type startchild_ret() :: {ok,pid()}|{ok,pid(),term()}|{error,_}.
 -type startlink_ret() :: {ok,pid()}|ignore|{error,_}.
