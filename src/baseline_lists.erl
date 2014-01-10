@@ -58,4 +58,4 @@ equalize(Num, Sum, Div, Rem, List) ->
 except(List1, List2)
   when is_list(List1), is_list(List2) ->
     Keys = proplists:get_keys(List1),
-    lists:filter(fun({K,_}) -> not(lists:member(K,Keys)) end, proplists:unflod(List2)).
+    lists:filter(fun({K,_}) -> not(lists:member(K,Keys)) end, proplists:unfold(List2)).
