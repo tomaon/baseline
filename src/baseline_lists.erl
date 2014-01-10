@@ -23,6 +23,7 @@
 -export([choose/1, choose/2]).
 -export([equalize/2]).
 -export([except/2]).
+-export([merge/2]).
 
 %% == public ==
 
@@ -59,3 +60,8 @@ except(List1, List2)
   when is_list(List1), is_list(List2) ->
     Keys = proplists:get_keys(List1),
     lists:filter(fun({K,_}) -> not(lists:member(K,Keys)) end, proplists:unfold(List2)).
+
+-spec merge([property()],[property()]) -> [property()].
+merge(List1, List2)
+  when is_list(List1), is_list(List2) ->
+    List1 ++ baseline_lists:except(List1, List2).
