@@ -1,0 +1,9 @@
+%% -*- erlang -*-
+{application, baseline,
+ [
+  {description, ""},
+  {vsn, {cmd, "cat VERSION"}},
+  {applications, [kernel,stdlib]},
+  {env, [
+        ]}
+ ]}.

@@ -1,0 +1,13 @@
+.ct
+.dialyzer_plt.local
+.eunit
+deps
+doc
+ebin
+rebar
+tmp
+*.beam
+*.dump
+*.o
+*.so
+*.*~
