@@ -22,6 +22,7 @@
 %% -- public --
 -export([basename/1, basename/2]).
 -export([deps/1, env/1, version/1]).
+-export([lib_dir/1, lib_dir/2]).
 
 %% == public ==
 
@@ -42,21 +43,35 @@ basename(Term, Suffix)
     basename(atom_to_list(Term), Suffix).
 
 -spec deps(atom()) -> [atom()].
-deps(App)
-  when is_atom(App) ->
-    _ = application:load(App),
-    {ok, List} = application:get_key(App, applications),
+deps(Application)
+  when is_atom(Application) ->
+    _ = application:load(Application),
+    {ok, List} = application:get_key(Application, applications),
     lists:foldl(fun proplists:delete/2, List, [kernel,stdlib]).
 
 -spec env(atom()) -> [property()].
-env(App)
-  when is_atom(App) ->
-    _ = application:load(App),
-    List = application:get_all_env(App),
+env(Application)
+  when is_atom(Application) ->
+    _ = application:load(Application),
+    List = application:get_all_env(Application),
     lists:foldl(fun proplists:delete/2, List, [included_applications]).
 
+-spec lib_dir(atom()) -> filename().
+lib_dir(Application) ->
+    filename:join(lib_dir(Application,priv), "lib").
+
+-spec lib_dir(atom(),atom()) -> filename().
+lib_dir(Application, SubDir) ->
+    case code:lib_dir(Application, SubDir) of
+        {error, bad_name} ->
+            {ok, Dir} = file:get_cwd(),
+            filename:join(Dir, atom_to_list(SubDir));
+        Dir ->
+            Dir
+    end.
+
 -spec version(atom()) -> [non_neg_integer()].
-version(App) ->
-    _ = application:load(App),
-    {ok, List} = application:get_key(App, vsn),
+version(Application) ->
+    _ = application:load(Application),
+    {ok, List} = application:get_key(Application, vsn),
     lists:map(fun list_to_integer/1, string:tokens(List, ".")).
