@@ -38,6 +38,7 @@ start_link(SupName, Args) ->
 stop(SupRef) ->
     stop(SupRef, [ element(2,E) || E <- supervisor:which_children(SupRef) ]).
 
+
 -spec start_child(sup_ref(),term()) -> startchild_ret().
 start_child(SupRef, Args) ->
     supervisor:start_child(SupRef, Args).
@@ -45,6 +46,7 @@ start_child(SupRef, Args) ->
 -spec terminate_child(sup_ref(),pid()) -> terminatechild_ret().
 terminate_child(SupRef, Pid) ->
     supervisor:terminate_child(SupRef, Pid).
+
 
 -spec find(sup_ref(),term()) -> node()|undefined. % pid() -> node(), for poolboy
 find(SupRef, Id) ->

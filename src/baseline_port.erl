@@ -60,6 +60,7 @@ unload(#handle{name=N})
   when undefined =/= N ->
     erl_ddll:unload(N).
 
+
 -spec path(handle()) -> string().
 path(#handle{path=P})
   when undefined =/= P ->
@@ -74,6 +75,7 @@ name(#handle{name=N})
 settings(#handle{settings=L})
   when undefined =/= L ->
     L.
+
 
 -spec open(handle()) -> {ok,port()}|{error,_}.
 open(#handle{settings=L}=H) ->
@@ -96,6 +98,7 @@ close(Port)
     true = unlink(Port),
     true = port_close(Port),
     ok.
+
 
 -spec call(port(),integer(),[term()]) -> term()|{error,_}.
 call(Port, Command, Args)
