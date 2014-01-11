@@ -33,11 +33,11 @@ choose(List)
     choose(List, 2).
 
 -spec choose([term()], integer()) -> term()|undefined.
-choose([], _N) ->
+choose([], _Size) ->
     undefined;
-choose(List, N)
-  when is_list(List), is_integer(N) ->
-    lists:nth(1 + binary:decode_unsigned(crypto:rand_bytes(N)) rem length(List), List).
+choose(List, Size)
+  when is_list(List), is_integer(Size) ->
+    lists:nth(1 + binary:decode_unsigned(crypto:rand_bytes(Size)) rem length(List), List).
 
 -spec equalize(pos_integer(),pos_integer()) -> [pos_integer()]|{error,_}.
 equalize(N, W)
@@ -58,10 +58,9 @@ equalize(Num, Sum, Div, Rem, List) ->
 -spec except([property()],[property()]) -> [property()].
 except(List1, List2)
   when is_list(List1), is_list(List2) ->
-    Keys = proplists:get_keys(List1),
-    lists:filter(fun({K,_}) -> not(lists:member(K,Keys)) end, proplists:unfold(List2)).
+    lists:filter(fun(E) -> not(proplists:is_defined(E,List2)) end, proplists:get_keys(List1)).
 
 -spec merge([property()],[property()]) -> [property()].
 merge(List1, List2)
   when is_list(List1), is_list(List2) ->
-    List1 ++ baseline_lists:except(List1, List2).
+    List1 ++ baseline_lists:except(List2, List1).
