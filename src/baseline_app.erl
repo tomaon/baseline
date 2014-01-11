@@ -20,48 +20,60 @@
 -include("internal.hrl").
 
 %% -- public --
--export([basename/1, basename/2]).
--export([deps/1, env/1, version/1]).
--export([lib_dir/1, lib_dir/2]).
+-export([start/1, stop/1]).
+-export([loaded/1, loaded_applications/0]).
+-export([deps/1, env/1, lib_dir/1, lib_dir/2, version/1]).
 
 %% == public ==
 
--spec basename(term()) -> atom().
-basename(Term)
-  when is_list(Term) ->
-    basename(Term, "_app");
-basename(Term)
-  when is_atom(Term) ->
-    basename(atom_to_list(Term)).
+-spec start(atom()) -> ok.
+start(Application)
+  when is_atom(Application) ->
+    L = baseline_lists:merge(loaded_applications(), deps(Application)),
+    lists:foreach(fun application:start/1, L ++ [Application]).
 
--spec basename(term(),string()) -> atom().
-basename(Term, Suffix)
-  when is_list(Term), is_list(Suffix) ->
-    list_to_atom(filename:basename(Term, Suffix));
-basename(Term, Suffix)
-  when is_atom(Term), is_list(Suffix) ->
-    basename(atom_to_list(Term), Suffix).
+-spec stop(atom()) -> ok.
+stop(Application)
+  when is_atom(Application) ->
+    application:stop(Application).
+
+
+-spec loaded(atom()) -> boolean().
+loaded(Application)
+  when is_atom(Application) ->
+    lists:member(Application, loaded_applications()).
+
+-spec loaded_applications() -> [atom()].
+loaded_applications() ->
+    lists:map(fun(E) -> element(1,E) end, application:loaded_applications()).
+
 
 -spec deps(atom()) -> [atom()].
 deps(Application)
   when is_atom(Application) ->
-    _ = application:load(Application),
-    {ok, List} = application:get_key(Application, applications),
-    lists:foldl(fun proplists:delete/2, List, [kernel,stdlib]).
+    F = fun (E) ->
+                {ok, List} = application:get_key(E, applications),
+                List
+        end,
+    execute(F, Application).
 
 -spec env(atom()) -> [property()].
 env(Application)
   when is_atom(Application) ->
-    _ = application:load(Application),
-    List = application:get_all_env(Application),
-    lists:foldl(fun proplists:delete/2, List, [included_applications]).
+    F = fun (E) ->
+                List = application:get_all_env(E),
+                lists:foldl(fun proplists:delete/2, List, [included_applications])
+        end,
+    execute(F, Application).
 
 -spec lib_dir(atom()) -> filename().
-lib_dir(Application) ->
+lib_dir(Application)
+  when is_atom(Application) ->
     filename:join(lib_dir(Application,priv), "lib").
 
 -spec lib_dir(atom(),atom()) -> filename().
-lib_dir(Application, SubDir) ->
+lib_dir(Application, SubDir)
+  when is_atom(Application), is_atom(SubDir)->
     case code:lib_dir(Application, SubDir) of
         {error, bad_name} ->
             {ok, Dir} = file:get_cwd(),
@@ -71,7 +83,25 @@ lib_dir(Application, SubDir) ->
     end.
 
 -spec version(atom()) -> [non_neg_integer()].
-version(Application) ->
-    _ = application:load(Application),
-    {ok, List} = application:get_key(Application, vsn),
-    lists:map(fun list_to_integer/1, string:tokens(List, ".")).
+version(Application)
+  when is_atom(Application) ->
+    F = fun (E) ->
+                {ok, List} = application:get_key(E, vsn),
+                lists:map(fun list_to_integer/1, string:tokens(List, "."))
+        end,
+    execute(F, Application).
+
+%% == private ==
+
+execute(Fun, Application) ->
+    execute(Fun, Application, loaded(Application)).
+
+execute(Fun, Application, true) ->
+    Fun(Application);
+execute(Fun, Application, false) ->
+    case application:load(Application) of
+        ok ->
+            execute(Fun, Application, true);
+        {error, Reason} ->
+            {error, Reason}
+    end.
