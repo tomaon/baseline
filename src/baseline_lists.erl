@@ -39,6 +39,7 @@ choose(List, Size)
   when is_list(List), is_integer(Size) ->
     lists:nth(1 + binary:decode_unsigned(crypto:rand_bytes(Size)) rem length(List), List).
 
+
 -spec equalize(pos_integer(),pos_integer()) -> [pos_integer()]|{error,_}.
 equalize(N, W)
   when is_integer(N), N > 0, is_integer(W), W > 0 ->
@@ -55,10 +56,18 @@ equalize(Num, Sum, Div, Rem, List) ->
     E = Sum + Div + 1,
     equalize(Num - 1, E, Div, Rem - 1, [E|List]).
 
+
 -spec except([property()],[property()]) -> [property()].
 except(List1, List2)
   when is_list(List1), is_list(List2) ->
-    lists:filter(fun(E) -> not(proplists:is_defined(E,List2)) end, proplists:get_keys(List1)).
+    F = fun (E) ->
+                K = if is_tuple(E) -> element(1, E);
+                       true -> E
+                    end,
+                not(proplists:is_defined(K,List2))
+        end,
+    lists:filter(F, List1).
+
 
 -spec merge([property()],[property()]) -> [property()].
 merge(List1, List2)

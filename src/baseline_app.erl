@@ -26,13 +26,12 @@
 
 %% == public ==
 
--spec start(atom()) -> ok.
+-spec start(atom()) -> {ok,[atom()]}|{error,_}.
 start(Application)
   when is_atom(Application) ->
-    L = baseline_lists:merge(loaded_applications(), deps(Application)),
-    lists:foreach(fun application:start/1, L ++ [Application]).
+    application:ensure_all_started(Application).
 
--spec stop(atom()) -> ok.
+-spec stop(atom()) -> ok|{error,_}.
 stop(Application)
   when is_atom(Application) ->
     application:stop(Application).
