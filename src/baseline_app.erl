@@ -20,16 +20,21 @@
 -include("internal.hrl").
 
 %% -- public --
--export([start/1, stop/1]).
+-export([start/1, start/2, stop/1]).
 -export([loaded/1, loaded_applications/0]).
 -export([deps/1, env/1, lib_dir/1, lib_dir/2, version/1]).
 
 %% == public ==
 
--spec start(atom()) -> {ok,[atom()]}|{error,_}.
+-spec start(atom()) -> ok|{error,_}.
 start(Application)
   when is_atom(Application) ->
-    application:ensure_all_started(Application).
+    start(Application, temporary).
+
+-spec start(atom(),atom()) -> ok|{error,_}.
+start(Application, Type)
+  when is_atom(Application), is_atom(Type) ->
+    start_all([Application], Type).
 
 -spec stop(atom()) -> ok|{error,_}.
 stop(Application)
@@ -56,7 +61,7 @@ deps(Application)
         end,
     execute(F, Application).
 
--spec env(atom()) -> [property()].
+-spec env(atom()) -> [term()].
 env(Application)
   when is_atom(Application) ->
     F = fun (E) ->
@@ -81,12 +86,13 @@ lib_dir(Application, SubDir)
             Dir
     end.
 
--spec version(atom()) -> [non_neg_integer()].
+-spec version(atom()) -> [term()].
 version(Application)
   when is_atom(Application) ->
     F = fun (E) ->
                 {ok, List} = application:get_key(E, vsn),
-                lists:map(fun list_to_integer/1, string:tokens(List, "."))
+                lists:map(fun(T) -> try list_to_integer(T) catch _:_ -> T end end,
+                          string:tokens(List, "."))
         end,
     execute(F, Application).
 
@@ -101,6 +107,20 @@ execute(Fun, Application, false) ->
     case application:load(Application) of
         ok ->
             execute(Fun, Application, true);
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
+start_all([], _Type) ->
+    ok;
+start_all([H|T]=L, Type) ->
+    case application:start(H, Type) of
+        ok ->
+            start_all(T, Type);
+        {error, {already_started,H}} ->
+            start_all(T, Type);
+        {error, {not_started,Application}} ->
+            start_all([Application|L], Type);
         {error, Reason} ->
             {error, Reason}
     end.

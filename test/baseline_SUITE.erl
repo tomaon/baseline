@@ -27,6 +27,4 @@ flush_test(_Config) ->
 %% == ==
 
 execute(Function,Args) ->
-    Value = apply(baseline, Function, Args),
-    ct:log("func=~p, args=~p, value=~p", [Function, Args, Value]),
-    Value.
+    baseline_ct:execute(baseline, Function, Args).

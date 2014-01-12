@@ -30,19 +30,19 @@ groups() ->
 %% == group: app ==
 
 app_test(_Config) ->
-    L = [
+    X = [
          { [baseline],  ok },
-         { [undefined], {error,{undefined,enoent(undefined)}} }
+         { [undefined], {error,baseline_ct:enoent(undefined)} }
         ],
     F = fun (A) ->
                 case execute(start, A) of
-                    {ok, _List} ->
+                    ok ->
                         execute(stop, A);
                     {error, Reason} ->
                         {error, Reason}
                 end
         end,
-    [ E = F(A) || {A,E} <- L ].
+    [ E = F(A) || {A,E} <- X ].
 
 %% == group: public ==
 
@@ -53,50 +53,50 @@ stop_test(_Config) ->
     {skip, not_implemented}. % >> app_test
 
 loaded_test(_Config) ->
-    D = [
+    X = [
          { [kernel],    true },
          { [stdlib],    true },
          { [crypto],    false },
          { [baseline],  false },
          { [undefined], false }
         ],
-    [ E = execute(loaded,A) || {A,E} <- D ].
+    [ E = execute(loaded,A) || {A,E} <- X ].
 
 loaded_applications_test(_Config) ->
     [kernel,common_test,stdlib] = execute(loaded_applications, []).
 
 deps_test(_Config) ->
-    D = [
+    X = [
          { [kernel],    [] },
          { [stdlib],    [kernel] },
          { [crypto],    [kernel,stdlib] },
          { [baseline],  [kernel,stdlib,crypto] },
-         { [undefined], {error,enoent(undefined)} }
+         { [undefined], {error,baseline_ct:enoent(undefined)} }
         ],
-    [ E = execute(deps,A) || {A,E} <- D ].
+    [ E = execute(deps,A) || {A,E} <- X ].
 
 env_test(_Config) ->
-    D = [
+    X = [
          { [kernel],    [{error_logger,tty}] },
          { [stdlib],    [] },
          { [crypto],    [] },
          { [baseline],  [{environment,src}] },
-         { [undefined], {error,enoent(undefined)} }
+         { [undefined], {error,baseline_ct:enoent(undefined)} }
         ],
-    [ E = execute(env,A) || {A,E} <- D ].
+    [ E = execute(env,A) || {A,E} <- X ].
 
 lib_dir_test(_Config) ->
-    D = [
+    X = [
          { [kernel],    filename:join([code:lib_dir(kernel,priv),lib]) },
          { [stdlib],    filename:join([code:lib_dir(stdlib,priv),lib]) },
          { [crypto],    filename:join([code:lib_dir(crypto,priv),lib]) },
-         { [baseline],  filename:join([base_dir(),priv,lib]) },
-         { [undefined], filename:join([base_dir(0),priv,lib]) }
+         { [baseline],  filename:join([baseline_ct:base_dir(),priv,lib]) },
+         { [undefined], filename:join([baseline_ct:base_dir(0),priv,lib]) }
         ],
-    [ E = execute(lib_dir,A) || {A,E} <- D ].
+    [ E = execute(lib_dir,A) || {A,E} <- X ].
 
 version_test(_Config) ->
-    case file:read_file(filename:join([base_dir(),"VERSION"])) of
+    case file:read_file(filename:join([baseline_ct:base_dir(),"VERSION"])) of
         {ok, Binary} ->
             E = string:strip(binary_to_list(Binary), right, $\n), % TODO
             V = execute(version,[baseline]),
@@ -108,22 +108,5 @@ version_test(_Config) ->
 
 %% == ==
 
-base_dir() ->
-    base_dir(2).
-
-base_dir(N) ->
-    case file:get_cwd() of % ~/.ct/ct_run.test@HOST.YYYY-MM-DD_hh.mm.ss
-        {ok, Dir} ->
-            L = filename:split(Dir),
-            filename:join(lists:sublist(L, length(L) - N));
-        {error, Reason} ->
-            ct:fail(Reason)
-    end.
-
-enoent(App) ->
-    {"no such file or directory",atom_to_list(App) ++ ".app"}.
-
 execute(Function,Args) ->
-    Value = apply(baseline_app, Function, Args),
-    ct:log("func=~p, args=~p, value=~p", [Function, Args, Value]),
-    Value.
+    baseline_ct:execute(baseline_app, Function, Args).
