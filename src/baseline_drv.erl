@@ -37,7 +37,8 @@
 %% == public ==
 
 -spec start_link([property()]) -> {ok,pid()}|{error,_}.
-start_link(Args) ->
+start_link(Args)
+  when is_list(Args) ->
     case gen_server:start_link(?MODULE, [], []) of
         {ok, Pid} ->
             case gen_server:call(Pid, {setup,Args}, infinity) of
