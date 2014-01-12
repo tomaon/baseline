@@ -2,11 +2,28 @@
  ERLANG_HOME ?= /opt/erlang/release/latest
 
 #
+#CC = /opt/gnu/gcc/4.7.3/bin/gcc
+
+#CFLAGS =
+#CFLAGS += -std=c99
+#CFLAGS += -g
+#CFLAGS += -Wall
+#CFLAGS += -Wextra
+#CFLAGS += -Wstrict-prototypes
+#CFLAGS += -fPIC
+#CFLAGS += -fno-common
+
+#LDFLAGS  =
+
+#
  REBAR_BIN  = ../bin/rebar
 
  REBAR_ENV  =
  REBAR_ENV += PATH=$(ERLANG_HOME)/bin:$(PATH)
  REBAR_ENV += ERL_LIB=..
+#REBAR_ENV += CC="$(CC)"
+#REBAR_ENV += CFLAGS="$(CFLAGS)"
+#REBAR_ENV += LDFLAGS="$(LDFLAGS)"
 
  REBAR_OPT  =
 #REBAR_OPT += --verbose 3
@@ -29,7 +46,7 @@
  DIALYZER_OPT += -I ..
 
 #
-default: n1
+default: build
 
 #
 delete-deps get-deps:
