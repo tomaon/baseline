@@ -27,6 +27,12 @@ groups() ->
      {group_app, [], [app_test]}
     ].
 
+init_per_suite(Config) ->
+    L = [
+         otp_release
+        ],
+    Config ++ [ {E,erlang:system_info(E)} || E <- L ].
+
 %% == group: app ==
 
 app_test(_Config) ->
@@ -62,8 +68,13 @@ loaded_test(_Config) ->
         ],
     [ E = execute(loaded,A) || {A,E} <- X ].
 
-loaded_applications_test(_Config) ->
-    [kernel,common_test,stdlib] = execute(loaded_applications, []).
+loaded_applications_test(Config) ->
+    loaded_applications_test(Config, ?config(otp_release,Config)).
+
+loaded_applications_test(_Config, Release) when "R16B" < Release ->
+    [kernel,common_test,stdlib] = execute(loaded_applications, []);
+loaded_applications_test(_Config, _Release) ->
+    [kernel,stdlib] = execute(loaded_applications, []).
 
 deps_test(_Config) ->
     X = [
