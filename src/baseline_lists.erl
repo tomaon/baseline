@@ -72,4 +72,4 @@ except(List1, List2)
 -spec merge([property()],[property()]) -> [property()].
 merge(List1, List2)
   when is_list(List1), is_list(List2) ->
-    List1 ++ baseline_lists:except(List2, List1).
+    lists:sort(List1 ++ baseline_lists:except(List2, List1)).

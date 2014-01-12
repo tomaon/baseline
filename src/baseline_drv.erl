@@ -21,7 +21,7 @@
 
 %% -- public --
 -export([start_link/1, stop/1]).
--export([call/3, call/4]).
+-export([call/4, call/5]).
 
 %% -- behaviour: gen_server --
 -behaviour(gen_server).
@@ -37,8 +37,7 @@
 %% == public ==
 
 -spec start_link([property()]) -> {ok,pid()}|{error,_}.
-start_link(Args)
-  when is_list(Args) ->
+start_link(Args) ->
     case gen_server:start_link(?MODULE, [], []) of
         {ok, Pid} ->
             case gen_server:call(Pid, {setup,Args}, infinity) of
@@ -58,15 +57,15 @@ stop(Pid)
     gen_server:call(Pid, stop, infinity).
 
 
--spec call(pid(),integer(),[term()]) -> term()|{error,_}.
-call(Pid, Command, Args)
-  when is_pid(Pid), is_integer(Command), is_list(Args) ->
-    call(Pid, Command, Args, timer:seconds(5)).
+-spec call(pid(),atom(),integer(),[term()]) -> term()|{error,_}.
+call(Pid, Type, Command, Args)
+  when is_pid(Pid), is_atom(Type), is_integer(Command), is_list(Args) ->
+    call(Pid, Type, Command, Args, timer:seconds(5)).
 
--spec call(pid(),integer(),[term()],timeout()) -> term()|{error,_}.
-call(Pid, Command, Args, Timeout)
-  when is_pid(Pid), is_integer(Command), is_list(Args) ->
-    gen_server:call(Pid, {command,Command,Args}, Timeout).
+-spec call(pid(),atom(),integer(),[term()],timeout()) -> term()|{error,_}.
+call(Pid, Type, Command, Args, Timeout)
+  when is_pid(Pid), is_atom(Type), is_integer(Command), is_list(Args) ->
+    gen_server:call(Pid, {Type,Command,Args}, Timeout).
 
 %% == behaviour: gen_server ==
 
@@ -79,6 +78,17 @@ terminate(_Reason, State) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
+handle_call({call,Command,Args}, From, #state{port=P,assigned=undefined}=S)
+  when is_integer(Command), is_list(Args)->
+    case baseline_port:call(P, Command, Args) of
+        ok ->
+            {noreply, S#state{assigned = From}};
+        {error, Reason} ->
+            {reply, {error,Reason}, S}
+    end;
+handle_call({call,Command,Args}, _From, #state{}=S)
+  when is_integer(Command), is_list(Args)->
+    {reply, {error,ebusy}, S};
 handle_call({command,Command,Args}, From, #state{port=P,assigned=undefined}=S)
   when is_integer(Command), is_list(Args)->
     case baseline_port:command(P, Command, Args) of
@@ -90,6 +100,9 @@ handle_call({command,Command,Args}, From, #state{port=P,assigned=undefined}=S)
 handle_call({command,Command,Args}, _From, #state{}=S)
   when is_integer(Command), is_list(Args)->
     {reply, {error,ebusy}, S};
+handle_call({control,Command,Args}, _From, #state{port=P,assigned=undefined}=S)
+  when is_integer(Command), is_list(Args)->
+    {reply, baseline_port:control(P,Command,Args), S};
 handle_call({setup,Args}, _From, #state{}=S) ->
     try lists:foldl(fun setup/2, S, Args) of
         State ->
