@@ -24,14 +24,14 @@ groups() ->
 %% == group: public ==
 
 choose_test(_Config) ->
-    D = [
+    X = [
          { [[a,b,c]] }
         ],
     undefined = execute(choose, [[]]),
-    [ true = lists:member(execute(choose,A), lists:nth(1,A)) || {A} <- D ].
+    [ true = lists:member(execute(choose,A), lists:nth(1,A)) || {A} <- X ].
 
 equalize_test(_Config) ->
-    D = [
+    X = [
          { [20,1], [20] },
          { [20,2], [10,20] },
          { [20,3], [7,14,20] },
@@ -43,10 +43,10 @@ equalize_test(_Config) ->
          { [0,8],  {error,badarg} },
          { [-1,8], {error,badarg} }
         ],
-    [ E = execute(equalize,A) || {A,E} <- D ].
+    [ E = execute(equalize,A) || {A,E} <- X ].
 
 except_test(_Config) ->
-    D = [
+    X = [
          { [[],[]],       [] },
          { [[a],[]],      [a] },
          { [[{a,1}],[]],  [{a,1}] },
@@ -60,10 +60,10 @@ except_test(_Config) ->
          { [[a,b],[a,a]], [b] },
          { [[a,b],[a,b]], [] }
         ],
-    [ E = execute(except,A) || {A,E} <- D ].
+    [ E = execute(except,A) || {A,E} <- X ].
 
 merge_test(_Config) ->
-    D = [
+    X = [
          { [[],[]],       [] },
          { [[a],[]],      [a] },
          { [[{a,1}],[]],  [{a,1}] },
@@ -77,11 +77,9 @@ merge_test(_Config) ->
          { [[a,b],[a,a]], [a,b] },
          { [[a,b],[a,b]], [a,b] }
         ],
-    [ E = execute(merge,A) || {A,E} <- D ].
+    [ E = execute(merge,A) || {A,E} <- X ].
 
 %% == ==
 
 execute(Function,Args) ->
-    Value = apply(baseline_lists, Function, Args),
-    ct:log("func=~p, args=~p, value=~p", [Function, Args, Value]),
-    Value.
+    baseline_ct:execute(baseline_lists, Function, Args).
