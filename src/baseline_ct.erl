@@ -50,5 +50,5 @@ enoent(App) ->
 -spec execute(atom(),atom(),[term()]) -> term().
 execute(Module, Function, Args) ->
     Value = apply(Module, Function, Args),
-    ct:log("{m,f,a}={~p,~p,~p} -> =~p", [Module,Function,Args,Value]),
+    ct:log("{m,f,a}={~p,~p,~p} -> ~p", [Module,Function,Args,Value]),
     Value.

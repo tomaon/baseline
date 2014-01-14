@@ -79,16 +79,8 @@ terminate(_Reason, State) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-handle_call({call,Command,Args}, From, #state{port=P,assigned=undefined}=S)
-  when is_integer(Command), is_list(Args)->
-    case baseline_port:call(P, Command, Args) of
-        ok ->
-            {noreply, S#state{assigned = From}};
-        {error, Reason} ->
-            {reply, {error,Reason}, S}
-    end;
-handle_call({call,Command,Args}, _From, #state{}=S)
-  when is_integer(Command), is_list(Args)->
+handle_call(_Request, _From, #state{assigned=A}=S)
+  when undefined =/= A ->
     {reply, {error,ebusy}, S};
 handle_call({command,Command,Args}, From, #state{port=P,assigned=undefined}=S)
   when is_integer(Command), is_list(Args)->
@@ -98,12 +90,9 @@ handle_call({command,Command,Args}, From, #state{port=P,assigned=undefined}=S)
         {error, Reason} ->
             {reply, {error,Reason}, S}
     end;
-handle_call({command,Command,Args}, _From, #state{}=S)
-  when is_integer(Command), is_list(Args)->
-    {reply, {error,ebusy}, S};
-handle_call({control,Command,Args}, _From, #state{port=P,assigned=undefined}=S)
-  when is_integer(Command), is_list(Args)->
-    {reply, baseline_port:control(P,Command,Args), S};
+handle_call({Type,Command,Args}, _From, #state{port=P,assigned=undefined}=S)
+  when ((call =:= Type) or (control =:= Type)), is_integer(Command), is_list(Args)->
+    {reply, apply(baseline_port,Type,[P,Command,Args]), S};
 handle_call({setup,Args}, _From, #state{}=S) ->
     try lists:foldl(fun setup/2, S, Args) of
         State ->

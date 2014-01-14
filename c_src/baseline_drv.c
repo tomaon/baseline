@@ -17,17 +17,13 @@
 
 #include <errno.h>
 #include <string.h>
+#include <unistd.h> // sleep
 
 #include "ei.h"
 #include "erl_interface.h"
 #include "erl_driver.h"
 
 #include "baseline_drv.h"
-
-// TODO
-#include <unistd.h>  // getpid,sleep
-#include <pthread.h> // pthread_self
-#define gettid() ((long)pthread_self())
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -161,34 +157,58 @@ static void control_set_options(driver_data_t *data,
 
 static void async_invoke(void *p) {
 
-  UNUSED(p);
+  unsigned int seconds = 2;
 
-  printf("exec: async_invoke(pid=%d,tid=%ld)\r\n", getpid(),gettid());
-  sleep(2);
+  if (NULL != p) {
+    unsigned long n = (unsigned long)p;
+    if (0 < n) {
+      seconds = n;
+    }
+  }
+
+  sleep(seconds);
 
   // !TERMINATE ? ready_async : async_free
 }
 
 static void async_free(void *p) {
-
   UNUSED(p);
-
-  printf("exec: async_free(pid=%d,tid=%ld)\r\n", getpid(),gettid());
 }
 
-static void output_async(driver_data_t *data,
-                         char *buf, int *index, ei_x_buff *x) {
+static void output_echo(driver_data_t *data,
+                        char *buf, int *index, ei_x_buff *x) {
+  int arity;
 
-  UNUSED(buf), UNUSED(index);
+  ei_decode_list_header(buf, index, &arity);
 
-  printf("exec: output_async(pid=%d,tid=%ld)\r\n", getpid(),gettid());
-  sleep(1);
+  if (3 == arity) {
 
-  unsigned int key = driver_async_port_key(data->port);
+    unsigned long size;
+    ei_decode_ulong(buf, index, &size);
 
-  if (1) driver_async(data->port, &key, async_invoke, NULL, async_free);
+    if (0 < size) {
 
-  ei_x_encode_atom(x, "ack");
+      char text[size];
+      ei_decode_string(buf, index, text);
+
+      driver_enq(data->port, text, size); // -> flush/1, MUST: ErlDrvPDL
+
+    } else {
+      ei_skip_term(buf, index);
+    }
+
+    unsigned long wait;
+    ei_decode_ulong(buf, index, &wait);
+
+    unsigned int key = driver_async_port_key(data->port);
+
+    driver_async(data->port, &key, async_invoke, (void *)wait, async_free);
+
+    ei_x_encode_atom(x, "ack");
+
+  } else {
+    encode_error(x, "badarg");
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -196,18 +216,20 @@ static void output_async(driver_data_t *data,
 
 static int init(void) {
 
-  ErlDrvSysInfo sys_info;
-  driver_system_info(&sys_info, sizeof(sys_info));
-  printf("driver_major_version: %d\r\n", sys_info.driver_major_version);
-  printf("driver_minor_version: %d\r\n", sys_info.driver_minor_version);
-  printf("erts_version        : %s\r\n", sys_info.erts_version);
-  printf("otp_release         : %s\r\n", sys_info.otp_release);
-  printf("thread_support      : %d\r\n", sys_info.thread_support);
-  printf("smp_support         : %d\r\n", sys_info.smp_support);
-  printf("async_threads       : %d\r\n", sys_info.async_threads);
-  printf("scheduler_threads   : %d\r\n", sys_info.scheduler_threads);
-  printf("nif_major_version   : %d\r\n", sys_info.nif_major_version);
-  printf("nif_minor_version   : %d\r\n", sys_info.nif_minor_version);
+  if (0) {
+    ErlDrvSysInfo sys_info;
+    driver_system_info(&sys_info, sizeof(sys_info));
+    printf("driver_major_version: %d\r\n", sys_info.driver_major_version);
+    printf("driver_minor_version: %d\r\n", sys_info.driver_minor_version);
+    printf("erts_version        : %s\r\n", sys_info.erts_version);
+    printf("otp_release         : %s\r\n", sys_info.otp_release);
+    printf("thread_support      : %d\r\n", sys_info.thread_support);
+    printf("smp_support         : %d\r\n", sys_info.smp_support);
+    printf("async_threads       : %d\r\n", sys_info.async_threads);
+    printf("scheduler_threads   : %d\r\n", sys_info.scheduler_threads);
+    printf("nif_major_version   : %d\r\n", sys_info.nif_major_version);
+    printf("nif_minor_version   : %d\r\n", sys_info.nif_minor_version);
+  }
 
   return 0;
 }
@@ -215,8 +237,6 @@ static int init(void) {
 static ErlDrvData start(ErlDrvPort port, char *command) {
 
   UNUSED(command); // = driver_name
-
-  printf("exec: start(pid=%d,tid=%ld)\r\n", getpid(),gettid());
 
   void *ptr = driver_alloc(sizeof(driver_data_t));
 
@@ -229,10 +249,6 @@ static ErlDrvData start(ErlDrvPort port, char *command) {
     data->port = port;
     strcpy(data->encoding, "utf8");
 
-    if (0) driver_set_timer(port, 100);
-
-    if (1) driver_enq(port, "QUEUE", 5); // -> flush/1, MUST: ErlDrvPDL
-
     return (ErlDrvData)data;
   }
 
@@ -241,8 +257,6 @@ static ErlDrvData start(ErlDrvPort port, char *command) {
 }
 
 static void stop(ErlDrvData drv_data) {
-
-  printf("exec: stop(pid=%d,tid=%ld)\r\n", getpid(),gettid());
 
   driver_data_t *data = (driver_data_t *)drv_data;
 
@@ -255,10 +269,8 @@ static void output(ErlDrvData drv_data, char *buf, ErlDrvSizeT len) {
 
   UNUSED(len);
 
-  printf("exec: output(pid=%d,tid=%ld)\r\n", getpid(),gettid());
-
   static const driver_func_t TABLE[] = {
-    output_async,
+    output_echo,
   };
 
   static const size_t TABLE_SIZE = sizeof(TABLE) / sizeof(TABLE[0]);
@@ -301,26 +313,13 @@ static void output(ErlDrvData drv_data, char *buf, ErlDrvSizeT len) {
   ei_x_free(&x);
 }
 
-static void ready_input(ErlDrvData drv_data, ErlDrvEvent event) {
-  UNUSED(drv_data), UNUSED(event);
-  printf("exec: ready_input(pid=%d,tid=%ld)\r\n", getpid(),gettid());
-}
-
-static void ready_output(ErlDrvData drv_data, ErlDrvEvent event) {
-  UNUSED(drv_data), UNUSED(event);
-  printf("exec: ready_output(pid=%d,tid=%ld)\r\n", getpid(),gettid());
-}
-
 static void finish(void) {
-  printf("exec: finish\r\n");
 }
 
 static ErlDrvSSizeT control(ErlDrvData drv_data, unsigned int command,
                             char *buf, ErlDrvSizeT len,
                             char **rbuf, ErlDrvSizeT rlen) {
   UNUSED(len);
-
-  printf("exec: control(pid=%d,tid=%ld)\r\n", getpid(),gettid());
 
   static const driver_func_t TABLE[] = {
     control_set_options,
@@ -374,36 +373,32 @@ static ErlDrvSSizeT control(ErlDrvData drv_data, unsigned int command,
   return result;
 }
 
-static void timeout(ErlDrvData drv_data) {
-
-  UNUSED(drv_data);
-
-  printf("exec: timeout(pid=%d,tid=%ld)\r\n", getpid(),gettid());
-
-  driver_data_t *data  = (driver_data_t *)drv_data;
-
-  ei_x_buff x;
-  ei_x_new_with_version(&x);
-  ei_x_encode_atom(&x, "ok");
-
-  driver_output(data->port, x.buff, x.index);
-
-  ei_x_free(&x);
-
-  driver_set_timer(data->port, 100);
-}
-
 static void ready_async(ErlDrvData drv_data, ErlDrvThreadData thread_data) {
 
   UNUSED(thread_data);
-
-  printf("exec: ready_async(pid=%d,tid=%ld)\r\n", getpid(),gettid());
 
   driver_data_t *data = (driver_data_t *)drv_data;
 
   ei_x_buff x;
   ei_x_new_with_version(&x);
-  ei_x_encode_atom(&x, "ok");
+
+  ErlIOVec ev;
+  ErlDrvSizeT size = driver_peekqv(data->port, &ev);
+
+  if (0 < size) {
+
+    char buf[size];
+    ErlDrvSizeT len = driver_vec_to_buf(&ev, buf, size);
+
+    ei_x_encode_tuple_header(&x, 2);
+    ei_x_encode_atom(&x, "ok");
+    ei_x_encode_string_len(&x, buf, len);
+
+    driver_deq(data->port, size);
+
+  } else {
+    ei_x_encode_atom(&x, "ok");
+  }
 
   driver_output(data->port, x.buff, x.index);
 
@@ -412,20 +407,12 @@ static void ready_async(ErlDrvData drv_data, ErlDrvThreadData thread_data) {
 
 static void flush(ErlDrvData drv_data) {
 
-  printf("exec: flush(pid=%d,tid=%ld)\r\n", getpid(),gettid());
-
   driver_data_t *data = (driver_data_t *)drv_data;
 
-  ErlIOVec ev;
-  ErlDrvSizeT size = driver_peekqv(data->port, &ev); //driver_sizeq(data->port);
+  ErlDrvSizeT size = driver_sizeq(data->port);
 
   if (0 < size) {
-
-    char buf[size];
-    ErlDrvSizeT len = driver_vec_to_buf(&ev, buf, sizeof(len));
-
-    printf("    : peekqv=%.*s, len=%d\r\n", (int)len, buf, (int)len);
-    printf("    : deq=%d -> %d\r\n", (int)size, (int)driver_deq(data->port, size));
+    driver_deq(data->port, size);
   }
 }
 
@@ -437,28 +424,18 @@ static ErlDrvSSizeT call(ErlDrvData drv_data, unsigned int command,
   return control(drv_data, command, buf, len, rbuf, rlen); // > rlen -> badarg
 }
 
-static void process_exit(ErlDrvData drv_data, ErlDrvMonitor *monitor) {
-  UNUSED(drv_data), UNUSED(monitor);
-  printf("exec: process_exit(pid=%d,tid=%ld)\r\n", getpid(),gettid());
-}
-
-static void stop_select(ErlDrvEvent event, void* reserved) {
-  UNUSED(event), UNUSED(reserved);
-  printf("exec: stop_select(pid=%d,tid=%ld)\r\n", getpid(),gettid());
-}
-
 static ErlDrvEntry driver_entry = {
   .init = init,
   .start = start,
   .stop = stop,
   .output = output,
-  .ready_input = ready_input,
-  .ready_output = ready_output,
+  .ready_input = NULL,
+  .ready_output = NULL,
   .driver_name = "baseline_drv",
   .finish = finish,
   .handle = NULL,                               // reserved
   .control = control,
-  .timeout = timeout,
+  .timeout = NULL,
   .outputv = NULL,                              // NULL -> output
   .ready_async = ready_async,                   // NULL -> async_free
   .flush = flush,
@@ -469,8 +446,8 @@ static ErlDrvEntry driver_entry = {
   .minor_version = ERL_DRV_EXTENDED_MINOR_VERSION,
   .driver_flags= ERL_DRV_FLAG_USE_PORT_LOCKING,
   .handle2 = NULL,                              // reserved
-  .process_exit = process_exit,
-  .stop_select = stop_select,
+  .process_exit = NULL,
+  .stop_select = NULL,
 };
 
 /*
