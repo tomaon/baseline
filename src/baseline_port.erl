@@ -24,6 +24,7 @@
 -export([path/1, name/1, settings/1]).
 -export([open/1, open/2, close/1]).
 -export([call/3, command/3, control/3]).
+-export([find/1]).
 
 %% -- private --
 -record(handle, {
@@ -130,6 +131,18 @@ control(Port, Command, Args)
             binary_to_term(Term)
     catch
         error:badarg ->
+            {error, badarg}
+    end.
+
+
+-spec find(string()) -> {ok,port()}|{error,_}.
+find(Name)
+  when is_list(Name) ->
+    F = fun(E) -> Name =:= proplists:get_value(name,erlang:port_info(E)) end,
+    case lists:filter(F, erlang:ports()) of
+        [Port] ->
+            Port;
+        [] ->
             {error, badarg}
     end.
 

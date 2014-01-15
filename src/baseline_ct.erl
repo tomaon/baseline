@@ -22,7 +22,8 @@
 %% -- public --
 -export([base_dir/0, base_dir/1]).
 -export([enoent/1]).
--export([execute/3]).
+-export([execute/3, execute_parallel/3, execute_sequential/3]).
+-export([loop/3]).
 
 %% == public ==
 
@@ -43,12 +44,39 @@ base_dir(N)
 
 
 -spec enoent(atom()) -> {string(),string()}.
-enoent(App) ->
+enoent(App)
+  when is_atom(App) ->
     {"no such file or directory", atom_to_list(App) ++ ".app"}.
 
 
 -spec execute(atom(),atom(),[term()]) -> term().
-execute(Module, Function, Args) ->
+execute(Module, Function, Args)
+  when is_atom(Module), is_atom(Function), is_list(Args) ->
     Value = apply(Module, Function, Args),
     ct:log("{m,f,a}={~p,~p,~p} -> ~p", [Module,Function,Args,Value]),
     Value.
+
+-spec execute_parallel(atom(),atom(),[term()]) -> [term()].
+execute_parallel(Module, Function, List)
+  when is_atom(Module), is_atom(Function), is_list(List) ->
+    Self = self(),
+    [ spawn(fun() -> Self ! E = execute(Module, Function, A) end) || {A,E} <- List ],
+    [ receive V -> V after 10000 -> ct:fail(timeout) end || _ <- List ].
+
+-spec execute_sequential(atom(),atom(),[term()]) -> [term()].
+execute_sequential(Module, Function, List)
+  when is_atom(Module), is_atom(Function), is_list(List) ->
+    [ E = execute(Module, Function, A) || {A,E} <- List ].
+
+
+-spec loop(atom(),[term()],[term()]) -> term().
+loop(Type, Config, List)
+  when is_atom(Type), is_list(Config), is_list(List) ->
+    try lists:foldl(fun(E,A) -> E(A) end, Config, List)
+    catch
+        Reason ->
+            case Type of
+                fail -> ct:fail(Reason);
+                skip -> {skip, Reason}
+            end
+    end.

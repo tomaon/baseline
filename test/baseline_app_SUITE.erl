@@ -119,5 +119,5 @@ version_test(_Config) ->
 
 %% == ==
 
-execute(Function,Args) ->
+execute(Function, Args) ->
     baseline_ct:execute(baseline_app, Function, Args).

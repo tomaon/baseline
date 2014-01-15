@@ -22,6 +22,7 @@
 %% -- public --
 -export([start_link/1, stop/1]).
 -export([call/4, call/5]).
+-export([load/1, unload/1]).
 
 %% -- behaviour: gen_server --
 -behaviour(gen_server).
@@ -47,9 +48,7 @@ start_link(Args)
                 {error, Reason} ->
                     ok = stop(Pid),
                     {error, Reason}
-            end;
-        Other ->
-            Other
+            end
     end.
 
 -spec stop(pid()) -> ok.
@@ -59,14 +58,25 @@ stop(Pid)
 
 
 -spec call(pid(),atom(),integer(),[term()]) -> term()|{error,_}.
-call(Pid, Type, Command, Args)
-  when is_pid(Pid), is_atom(Type), is_integer(Command), is_list(Args) ->
-    call(Pid, Type, Command, Args, timer:seconds(5)).
+call(Pid, Function, Command, Args)
+  when is_pid(Pid), is_atom(Function), is_integer(Command), is_list(Args) ->
+    call(Pid, Function, Command, Args, timer:seconds(5)).
 
 -spec call(pid(),atom(),integer(),[term()],timeout()) -> term()|{error,_}.
-call(Pid, Type, Command, Args, Timeout)
-  when is_pid(Pid), is_atom(Type), is_integer(Command), is_list(Args) ->
-    gen_server:call(Pid, {Type,Command,Args}, Timeout).
+call(Pid, Function, Command, Args, Timeout)
+  when is_pid(Pid), is_atom(Function), is_integer(Command), is_list(Args) ->
+    gen_server:call(Pid, {Function,Command,Args}, Timeout).
+
+
+-spec load([property()]) -> {ok,tuple()}|{error,_}.
+load(Configs)
+  when is_list(Configs) ->
+    baseline_port:load(Configs).
+
+-spec unload(tuple()) -> ok|{error,_}.
+unload(Handle)
+  when is_tuple(Handle) ->
+    baseline_port:unload(Handle).
 
 %% == behaviour: gen_server ==
 
@@ -79,9 +89,6 @@ terminate(_Reason, State) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-handle_call(_Request, _From, #state{assigned=A}=S)
-  when undefined =/= A ->
-    {reply, {error,ebusy}, S};
 handle_call({command,Command,Args}, From, #state{port=P,assigned=undefined}=S)
   when is_integer(Command), is_list(Args)->
     case baseline_port:command(P, Command, Args) of
@@ -90,13 +97,18 @@ handle_call({command,Command,Args}, From, #state{port=P,assigned=undefined}=S)
         {error, Reason} ->
             {reply, {error,Reason}, S}
     end;
-handle_call({Type,Command,Args}, _From, #state{port=P,assigned=undefined}=S)
-  when ((call =:= Type) or (control =:= Type)), is_integer(Command), is_list(Args)->
-    {reply, apply(baseline_port,Type,[P,Command,Args]), S};
-handle_call({setup,Args}, _From, #state{}=S) ->
-    try lists:foldl(fun setup/2, S, Args) of
-        State ->
-            {reply, ok, State}
+handle_call({Function,Command,Args}, _From, #state{port=P,assigned=undefined}=S)
+  when is_atom(Function), is_integer(Command), is_list(Args)->
+    {reply, apply(baseline_port,Function,[P,Command,Args]), S};
+handle_call(_Request, _From, #state{assigned=A}=S)
+  when undefined =/= A ->
+    {reply, {error,ebusy}, S};
+handle_call({setup,Args}, _From, State) ->
+    try lists:foldl(fun setup/2, State, Args) of
+        #state{port=P}=S when is_port(P) ->
+            {reply, ok, S};
+        #state{}=S ->
+            {reply, {error,badarg}, S}
     catch
         {Reason, State} ->
             {reply, {error,Reason}, State}
@@ -141,13 +153,17 @@ setup([]) ->
 
 setup({handle,Term}, #state{port=undefined}=S) ->
     Handle = if is_tuple(Term) -> Term;
-                true -> throw({badarg,handle})
+                true ->
+                     throw({{badarg,handle},S})
              end,
-    case baseline_port:open(Handle) of
+    try baseline_port:open(Handle) of
         {ok, Port} ->
             S#state{port = Port};
         {error, Reason} ->
             throw({Reason,S})
+    catch
+        _:_ ->
+            throw({{badarg,handle},S})
     end;
 setup(_Ignore, #state{}=S) ->
     S.

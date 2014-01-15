@@ -157,16 +157,11 @@ static void control_set_options(driver_data_t *data,
 
 static void async_invoke(void *p) {
 
-  unsigned int seconds = 2;
+  unsigned long seconds = (unsigned long)p;
 
-  if (NULL != p) {
-    unsigned long n = (unsigned long)p;
-    if (0 < n) {
-      seconds = n;
-    }
+  if (0 < seconds) {
+    sleep(seconds);
   }
-
-  sleep(seconds);
 
   // !TERMINATE ? ready_async : async_free
 }
