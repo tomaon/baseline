@@ -3,32 +3,37 @@
 
 -module(baseline_lists_SUITE).
 
--compile(export_all).
-
 -include("internal.hrl").
 
+%% -- callback: ct --
+-export([all/0]).
+
+%% -- pubic --
+-export([
+         choose_test/1,
+         equalize_test/1,
+         except_test/1,
+         merge_test/1
+        ]).
+
+%% == callback: ct ==
+
 all() -> [
-          {group, group_public}
+          choose_test,
+          equalize_test,
+          except_test,
+          merge_test
          ].
 
-groups() ->
-    [
-     {group_public, [], [
-                         choose_test,
-                         equalize_test,
-                         except_test,
-                         merge_test
-                        ]}
-    ].
-
-%% == group: public ==
+%% == public ==
 
 choose_test(_Config) ->
     X = [
          { [[a,b,c]] }
         ],
-    undefined = execute(choose, [[]]),
-    [ true = lists:member(execute(choose,A), lists:nth(1,A)) || {A} <- X ].
+    undefined = test(choose, [[]]),
+    [ true = lists:member(test(choose,A), lists:nth(1,A)) || {A} <- X ].
+
 
 equalize_test(_Config) ->
     X = [
@@ -43,7 +48,8 @@ equalize_test(_Config) ->
          { [0,8],  {error,badarg} },
          { [-1,8], {error,badarg} }
         ],
-    [ E = execute(equalize,A) || {A,E} <- X ].
+    [ E = test(equalize,A) || {A,E} <- X ].
+
 
 except_test(_Config) ->
     X = [
@@ -60,7 +66,8 @@ except_test(_Config) ->
          { [[a,b],[a,a]], [b] },
          { [[a,b],[a,b]], [] }
         ],
-    [ E = execute(except,A) || {A,E} <- X ].
+    [ E = test(except,A) || {A,E} <- X ].
+
 
 merge_test(_Config) ->
     X = [
@@ -77,9 +84,9 @@ merge_test(_Config) ->
          { [[a,b],[a,a]], [a,b] },
          { [[a,b],[a,b]], [a,b] }
         ],
-    [ E = execute(merge,A) || {A,E} <- X ].
+    [ E = test(merge,A) || {A,E} <- X ].
 
-%% == ==
+%% == private ==
 
-execute(Function,Args) ->
-    baseline_ct:execute(baseline_lists, Function, Args).
+test(Function,Args) ->
+    baseline_ct:test(baseline_lists, Function, Args).

@@ -3,28 +3,29 @@
 
 -module(baseline_SUITE).
 
--compile(export_all).
-
 -include("internal.hrl").
 
+%% -- callback: ct --
+-export([all/0]).
+
+%% -- public --
+-export([
+         flush_test/1
+        ]).
+
+%% == callback: ct ==
+
 all() -> [
-          {group, group_public}
+          flush_test
          ].
 
-groups() ->
-    [
-     {group_public, [], [
-                         flush_test
-                        ]}
-    ].
-
-%% == group: public ==
+%% == public ==
 
 flush_test(_Config) ->
     [ self() ! ping || _ <- lists:seq(1,10) ],
-    ok = execute(flush, []).
+    ok = test(flush, []).
 
-%% == ==
+%% == private ==
 
-execute(Function, Args) ->
-    baseline_ct:execute(baseline, Function, Args).
+test(Function, Args) ->
+    baseline_ct:test(baseline, Function, Args).

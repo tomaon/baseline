@@ -3,29 +3,26 @@
 
 -module(baseline_app_SUITE).
 
--compile(export_all).
-
 -include("internal.hrl").
 
-all() -> [
-          {group, group_public},
-          {group, group_app}
-         ].
+%% -- callback: ct --
+-export([all/0]).
+-export([init_per_suite/1, end_per_suite/1]).
 
-groups() ->
-    [
-     {group_public, [], [
-                         start_test,
-                         stop_test,
-                         loaded_test,
-                         loaded_applications_test,
-                         deps_test,
-                         env_test,
-                         lib_dir_test,
-                         version_test
-                        ]},
-     {group_app, [], [app_test]}
-    ].
+%% -- public --
+-export([
+         loaded_test/1, loaded_applications_test/1,
+         deps_test/1, env_test/1, lib_dir_test/1, version_test/1,
+         start_stop_test/1
+        ]).
+
+%% == callback: ct ==
+
+all() -> [
+          loaded_test, loaded_applications_test,
+          deps_test, env_test, lib_dir_test, version_test,
+          start_stop_test
+         ].
 
 init_per_suite(Config) ->
     L = [
@@ -33,30 +30,10 @@ init_per_suite(Config) ->
         ],
     Config ++ [ {E,erlang:system_info(E)} || E <- L ].
 
-%% == group: app ==
+end_per_suite(Config) ->
+    Config.
 
-app_test(_Config) ->
-    X = [
-         { [baseline],  ok },
-         { [undefined], {error,baseline_ct:enoent(undefined)} }
-        ],
-    F = fun (A) ->
-                case execute(start, A) of
-                    ok ->
-                        execute(stop, A);
-                    {error, Reason} ->
-                        {error, Reason}
-                end
-        end,
-    [ E = F(A) || {A,E} <- X ].
-
-%% == group: public ==
-
-start_test(_Config) ->
-    {skip, not_implemented}. % >> app_test
-
-stop_test(_Config) ->
-    {skip, not_implemented}. % >> app_test
+%% == public ==
 
 loaded_test(_Config) ->
     X = [
@@ -66,15 +43,16 @@ loaded_test(_Config) ->
          { [baseline],  false },
          { [undefined], false }
         ],
-    [ E = execute(loaded,A) || {A,E} <- X ].
+    [ E = test(loaded,A) || {A,E} <- X ].
 
 loaded_applications_test(Config) ->
     loaded_applications_test(Config, ?config(otp_release,Config)).
 
 loaded_applications_test(_Config, Release) when "R16B" < Release ->
-    [kernel,common_test,stdlib] = execute(loaded_applications, []);
+    [kernel,common_test,stdlib] = test(loaded_applications, []);
 loaded_applications_test(_Config, _Release) ->
-    [kernel,stdlib] = execute(loaded_applications, []).
+    [kernel,stdlib] = test(loaded_applications, []).
+
 
 deps_test(_Config) ->
     X = [
@@ -84,7 +62,7 @@ deps_test(_Config) ->
          { [baseline],  [kernel,stdlib,crypto] },
          { [undefined], {error,baseline_ct:enoent(undefined)} }
         ],
-    [ E = execute(deps,A) || {A,E} <- X ].
+    [ E = test(deps,A) || {A,E} <- X ].
 
 env_test(_Config) ->
     X = [
@@ -94,7 +72,7 @@ env_test(_Config) ->
          { [baseline],  [{environment,src}] },
          { [undefined], {error,baseline_ct:enoent(undefined)} }
         ],
-    [ E = execute(env,A) || {A,E} <- X ].
+    [ E = test(env,A) || {A,E} <- X ].
 
 lib_dir_test(_Config) ->
     X = [
@@ -104,20 +82,39 @@ lib_dir_test(_Config) ->
          { [baseline],  filename:join([baseline_ct:base_dir(),priv,lib]) },
          { [undefined], filename:join([baseline_ct:base_dir(0),priv,lib]) }
         ],
-    [ E = execute(lib_dir,A) || {A,E} <- X ].
+    [ E = test(lib_dir,A) || {A,E} <- X ].
 
 version_test(_Config) ->
     case file:read_file(filename:join([baseline_ct:base_dir(),"VERSION"])) of
         {ok, Binary} ->
             E = string:strip(binary_to_list(Binary), right, $\n), % TODO
-            V = execute(version,[baseline]),
+            V = test(version,[baseline]),
             A = string:join(lists:map(fun integer_to_list/1, V),"."),
             E = A;
         {error, Reason} ->
             ct:fail(Reason)
     end.
 
-%% == ==
 
-execute(Function, Args) ->
-    baseline_ct:execute(baseline_app, Function, Args).
+start_stop_test(_Config) -> % MUST be the last
+    X = [
+         %% kernel
+         { [stdlib],    ok },
+         { [crypto],    ok },
+         { [baseline],  ok },
+         { [undefined], {error,baseline_ct:enoent(undefined)} }
+        ],
+    F = fun (A) ->
+                case test(start, A) of
+                    ok ->
+                        test(stop, A);
+                    {error, Reason} ->
+                        {error, Reason}
+                end
+        end,
+    [ E = F(A) || {A,E} <- X ].
+
+%% == private ==
+
+test(Function, Args) ->
+    baseline_ct:test(baseline_app, Function, Args).

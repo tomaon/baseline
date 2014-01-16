@@ -37,7 +37,9 @@
 
 %% == public ==
 
--spec start_link([property()]) -> {ok,pid()}|{error,_}.
+-spec start_link(baseline_drv()|[property()]) -> {ok,pid()}|{error,_}.
+start_link(#baseline_drv{}=H) ->
+    start_link([{handle,H}]);
 start_link(Args)
   when is_list(Args) ->
     case gen_server:start_link(?MODULE, [], []) of
@@ -68,15 +70,15 @@ call(Pid, Function, Command, Args, Timeout)
     gen_server:call(Pid, {Function,Command,Args}, Timeout).
 
 
--spec load([property()]) -> {ok,tuple()}|{error,_}.
+-spec load([property()]) -> {ok,baseline_drv()}|{error,_}.
 load(Configs)
   when is_list(Configs) ->
-    baseline_port:load(Configs).
+    baseline_drv_port:load(Configs).
 
--spec unload(tuple()) -> ok|{error,_}.
+-spec unload(baseline_drv()) -> ok|{error,_}.
 unload(Handle)
-  when is_tuple(Handle) ->
-    baseline_port:unload(Handle).
+  when is_record(Handle,baseline_drv) ->
+    baseline_drv_port:unload(Handle).
 
 %% == behaviour: gen_server ==
 
@@ -91,7 +93,7 @@ code_change(_OldVsn, State, _Extra) ->
 
 handle_call({command,Command,Args}, From, #state{port=P,assigned=undefined}=S)
   when is_integer(Command), is_list(Args)->
-    case baseline_port:command(P, Command, Args) of
+    case baseline_drv_port:command(P, Command, Args) of
         ok ->
             {noreply, S#state{assigned = From}};
         {error, Reason} ->
@@ -99,7 +101,7 @@ handle_call({command,Command,Args}, From, #state{port=P,assigned=undefined}=S)
     end;
 handle_call({Function,Command,Args}, _From, #state{port=P,assigned=undefined}=S)
   when is_atom(Function), is_integer(Command), is_list(Args)->
-    {reply, apply(baseline_port,Function,[P,Command,Args]), S};
+    {reply, apply(baseline_drv_port,Function,[P,Command,Args]), S};
 handle_call(_Request, _From, #state{assigned=A}=S)
   when undefined =/= A ->
     {reply, {error,ebusy}, S};
@@ -110,8 +112,8 @@ handle_call({setup,Args}, _From, State) ->
         #state{}=S ->
             {reply, {error,badarg}, S}
     catch
-        {Reason, State} ->
-            {reply, {error,Reason}, State}
+        {Reason, #state{}=S} ->
+            {reply, {error,Reason}, S}
     end;
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
@@ -142,7 +144,7 @@ handle_info(_Info, State) ->
 
 cleanup(#state{port=P}=S)
   when undefined =/= P ->
-    _ = baseline_port:close(P),
+    _ = baseline_drv_port:close(P),
     cleanup(S#state{port = undefined});
 cleanup(#state{}) ->
     baseline:flush().
@@ -152,18 +154,14 @@ setup([]) ->
     {ok, #state{}}.
 
 setup({handle,Term}, #state{port=undefined}=S) ->
-    Handle = if is_tuple(Term) -> Term;
-                true ->
-                     throw({{badarg,handle},S})
+    Handle = if is_record(Term,baseline_drv) -> Term;
+                true -> throw({{badarg,handle},S})
              end,
-    try baseline_port:open(Handle) of
+    case baseline_drv_port:open(Handle) of
         {ok, Port} ->
             S#state{port = Port};
         {error, Reason} ->
-            throw({Reason,S})
-    catch
-        _:_ ->
-            throw({{badarg,handle},S})
+            throw({{Reason,handle},S})
     end;
 setup(_Ignore, #state{}=S) ->
     S.

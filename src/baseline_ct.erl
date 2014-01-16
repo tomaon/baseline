@@ -22,7 +22,7 @@
 %% -- public --
 -export([base_dir/0, base_dir/1]).
 -export([enoent/1]).
--export([execute/3, execute_parallel/3, execute_sequential/3]).
+-export([test/3, test_parallel/3, test_sequential/3]).
 -export([loop/3]).
 
 %% == public ==
@@ -49,24 +49,24 @@ enoent(App)
     {"no such file or directory", atom_to_list(App) ++ ".app"}.
 
 
--spec execute(atom(),atom(),[term()]) -> term().
-execute(Module, Function, Args)
+-spec test(atom(),atom(),[term()]) -> term().
+test(Module, Function, Args)
   when is_atom(Module), is_atom(Function), is_list(Args) ->
     Value = apply(Module, Function, Args),
     ct:log("{m,f,a}={~p,~p,~p} -> ~p", [Module,Function,Args,Value]),
     Value.
 
--spec execute_parallel(atom(),atom(),[term()]) -> [term()].
-execute_parallel(Module, Function, List)
+-spec test_parallel(atom(),atom(),[term()]) -> [term()].
+test_parallel(Module, Function, List)
   when is_atom(Module), is_atom(Function), is_list(List) ->
     Self = self(),
-    [ spawn(fun() -> Self ! E = execute(Module, Function, A) end) || {A,E} <- List ],
+    [ spawn(fun() -> Self ! E = test(Module, Function, A) end) || {A,E} <- List ],
     [ receive V -> V after 10000 -> ct:fail(timeout) end || _ <- List ].
 
--spec execute_sequential(atom(),atom(),[term()]) -> [term()].
-execute_sequential(Module, Function, List)
+-spec test_sequential(atom(),atom(),[term()]) -> [term()].
+test_sequential(Module, Function, List)
   when is_atom(Module), is_atom(Function), is_list(List) ->
-    [ E = execute(Module, Function, A) || {A,E} <- List ].
+    [ E = test(Module, Function, A) || {A,E} <- List ].
 
 
 -spec loop(atom(),[term()],[term()]) -> term().

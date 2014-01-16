@@ -61,7 +61,7 @@ static void encode_error1(ei_x_buff *x, const char *error, const char *arg1) {
   ei_x_encode_atom(x, "error");
   ei_x_encode_tuple_header(x, 2);
   ei_x_encode_atom(x, error);
-  ei_x_encode_string(x, arg1);
+  ei_x_encode_atom(x, arg1);
 }
 
 static void encode_ok(ei_x_buff *x) {

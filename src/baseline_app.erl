@@ -34,7 +34,7 @@ start(Application)
 -spec start(atom(),atom()) -> ok|{error,_}.
 start(Application, Type)
   when is_atom(Application), is_atom(Type) ->
-    start_all([Application], Type).
+    ensure_start([Application], Type).
 
 -spec stop(atom()) -> ok|{error,_}.
 stop(Application)
@@ -59,7 +59,7 @@ deps(Application)
                 {ok, List} = application:get_key(E, applications),
                 List
         end,
-    execute(F, Application).
+    ensure_call(F, Application).
 
 -spec env(atom()) -> [term()].
 env(Application)
@@ -68,7 +68,7 @@ env(Application)
                 List = application:get_all_env(E),
                 lists:foldl(fun proplists:delete/2, List, [included_applications])
         end,
-    execute(F, Application).
+    ensure_call(F, Application).
 
 -spec lib_dir(atom()) -> filename().
 lib_dir(Application)
@@ -94,33 +94,33 @@ version(Application)
                 lists:map(fun(T) -> try list_to_integer(T) catch _:_ -> T end end,
                           string:tokens(List, "."))
         end,
-    execute(F, Application).
+    ensure_call(F, Application).
 
 %% == private ==
 
-execute(Fun, Application) ->
-    execute(Fun, Application, loaded(Application)).
+ensure_call(Fun, Application) ->
+    ensure_call(Fun, Application, loaded(Application)).
 
-execute(Fun, Application, true) ->
+ensure_call(Fun, Application, true) ->
     Fun(Application);
-execute(Fun, Application, false) ->
+ensure_call(Fun, Application, false) ->
     case application:load(Application) of
         ok ->
-            execute(Fun, Application, true);
+            ensure_call(Fun, Application, true);
         {error, Reason} ->
             {error, Reason}
     end.
 
-start_all([], _Type) ->
+ensure_start([], _Type) ->
     ok;
-start_all([H|T]=L, Type) ->
+ensure_start([H|T]=L, Type) ->
     case application:start(H, Type) of
         ok ->
-            start_all(T, Type);
+            ensure_start(T, Type);
         {error, {already_started,H}} ->
-            start_all(T, Type);
+            ensure_start(T, Type);
         {error, {not_started,Application}} ->
-            start_all([Application|L], Type);
+            ensure_start([Application|L], Type);
         {error, Reason} ->
             {error, Reason}
     end.

@@ -15,37 +15,27 @@
 %% Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 %% =============================================================================
 
--module(baseline_port).
+-module(baseline_drv_port).
 
 -include("internal.hrl").
 
 %% -- public --
 -export([load/1, unload/1]).
--export([path/1, name/1, settings/1]).
 -export([open/1, open/2, close/1]).
 -export([call/3, command/3, control/3]).
 -export([find/1]).
 
-%% -- private --
--record(handle, {
-          path :: string(),
-          name :: string(),
-          settings :: [property()]
-         }).
-
--type(handle() :: #handle{}).
-
 %% == public ==
 
--spec load([property()]) -> {ok,handle()}|{error,_}.
+-spec load([property()]) -> {ok,baseline_drv()}|{error,_}.
 load(Configs)
   when is_list(Configs) ->
     try lists:foldl(fun setup/2, setup(), Configs) of
-        #handle{path=P,name=N}=H ->
+        #baseline_drv{name=undefined} ->
+            {error, badarg};
+        #baseline_drv{path=P,name=N}=H ->
             case erl_ddll:load(P, N) of
                 ok ->
-                    {ok, H};
-                {error, already_loaded} ->
                     {ok, H};
                 {error, Reason} ->
                     ok = error_logger:error_report([erl_ddll:format_error(Reason),H]),
@@ -56,54 +46,39 @@ load(Configs)
             {error, Reason}
     end.
 
--spec unload(handle()) -> ok|{error,_}.
-unload(#handle{name=N})
-  when undefined =/= N ->
+-spec unload(baseline_drv()) -> ok|{error,_}.
+unload(#baseline_drv{name=N})
+  when is_list(N) ->
     erl_ddll:unload(N).
 
 
--spec path(handle()) -> string().
-path(#handle{path=P})
-  when undefined =/= P ->
-    P.
-
--spec name(handle()) -> string().
-name(#handle{name=N})
-  when undefined =/= N ->
-    N.
-
--spec settings(handle()) -> [property()].
-settings(#handle{settings=L})
-  when undefined =/= L ->
-    L.
-
-
--spec open(handle()) -> {ok,port()}|{error,_}.
-open(#handle{settings=L}=H) ->
+-spec open(baseline_drv()) -> {ok,port()}|{error,_}.
+open(#baseline_drv{settings=L}=H) ->
     open(H, L).
 
--spec open(handle(),[property()]) -> {ok,port()}|{error,_}.
-open(#handle{name=N}, Settings)
-  when undefined =/= N, is_list(Settings) ->
+-spec open(baseline_drv(),[property()]) -> {ok,port()}|{error,_}.
+open(#baseline_drv{name=N}, Settings)
+  when is_list(N), is_list(Settings) ->
     try open_port({spawn_driver,N}, [binary|proplists:delete(binary,Settings)]) of
-        Port ->
+        Port when is_port(Port) ->
             {ok, Port}
     catch
         error:Reason ->
             {error, Reason}
-    end.
+    end;
+open(_Handle, _Settings) ->
+    {error, badarg}.
 
--spec close(port()) -> ok.
+-spec close(port()|atom()) -> ok.
 close(Port)
-  when is_port(Port)->
-    true = unlink(Port),
+  when is_port(Port) or is_atom(Port) ->
     true = port_close(Port),
     ok.
 
 
--spec call(port(),integer(),[term()]) -> term()|{error,_}.
+-spec call(port()|atom(),integer(),[term()]) -> term()|{error,_}.
 call(Port, Command, Args)
-  when is_port(Port), is_integer(Command), is_list(Args) ->
+  when (is_port(Port) or is_atom(Port)), is_integer(Command), is_list(Args) ->
     try erlang:port_call(Port, Command, Args) of
         Term when not is_binary(Term) ->
             Term
@@ -112,9 +87,9 @@ call(Port, Command, Args)
             {error, badarg}
     end.
 
--spec command(port(),integer(),[term()]) -> ok|{error,_}.
+-spec command(port()|atom(),integer(),[term()]) -> ok|{error,_}.
 command(Port, Command, Args)
-  when is_port(Port), is_integer(Command), is_list(Args) ->
+  when (is_port(Port) or  is_atom(Port)), is_integer(Command), is_list(Args) ->
     try port_command(Port, term_to_binary({Command,Args})) of
         true ->
             ok
@@ -123,9 +98,9 @@ command(Port, Command, Args)
             {error, badarg}
     end.
 
--spec control(port(),integer(),[term()]) -> term()|{error,_}.
+-spec control(port()|atom(),integer(),[term()]) -> term()|{error,_}.
 control(Port, Command, Args)
-  when is_port(Port), is_integer(Command), is_list(Args) ->
+  when (is_port(Port) or is_atom(Port)), is_integer(Command), is_list(Args) ->
     try port_control(Port, Command, term_to_binary(Args)) of
         Term when is_binary(Term) ->
             binary_to_term(Term)
@@ -135,7 +110,7 @@ control(Port, Command, Args)
     end.
 
 
--spec find(string()) -> {ok,port()}|{error,_}.
+-spec find(string()|baseline_drv()) -> {ok,port()}|{error,_}.
 find(Name)
   when is_list(Name) ->
     F = fun(E) -> Name =:= proplists:get_value(name,erlang:port_info(E)) end,
@@ -144,26 +119,28 @@ find(Name)
             Port;
         [] ->
             {error, badarg}
-    end.
+    end;
+find(#baseline_drv{name=N}) ->
+    find(N).
 
 %% == private ==
 
 setup() ->
-    #handle{path = baseline_app:lib_dir(undefined), settings = []}.
+    #baseline_drv{path = baseline_app:lib_dir(undefined), settings = []}.
 
-setup({path,Term}, #handle{}=H) ->
-    if is_binary(Term) -> H#handle{path = binary_to_list(Term)};
-       is_list(Term)   -> H#handle{path = Term};
+setup({path,Term}, #baseline_drv{}=H) ->
+    if is_binary(Term) -> H#baseline_drv{path = binary_to_list(Term)};
+       is_list(Term)   -> H#baseline_drv{path = Term};
        true -> throw({badarg,path})
     end;
-setup({name,Term}, #handle{}=H) ->
-    if is_binary(Term) -> H#handle{name = binary_to_list(Term)};
-       is_list(Term)   -> H#handle{name = Term};
+setup({name,Term}, #baseline_drv{}=H) ->
+    if is_binary(Term) -> H#baseline_drv{name = binary_to_list(Term)};
+       is_list(Term)   -> H#baseline_drv{name = Term};
        true -> throw({badarg,name})
     end;
-setup({settings,Term}, #handle{}=H) ->
-    if is_list(Term) -> H#handle{settings = Term};
+setup({settings,Term}, #baseline_drv{}=H) ->
+    if is_list(Term) -> H#baseline_drv{settings = Term};
        true -> throw({badarg,settings})
     end;
-setup(_Ignore, #handle{}=H) ->
+setup(_Ignore, #baseline_drv{}=H) ->
     H.

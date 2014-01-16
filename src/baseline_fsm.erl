@@ -47,9 +47,7 @@ start_link(Args)
                 {error, Reason} ->
                     ok = stop(Pid),
                     {error, Reason}
-            end;
-        Other ->
-            Other
+            end
     end.
 
 -spec stop(pid()) -> ok.
@@ -98,13 +96,13 @@ handle_info(_Info, StateName, StateData) ->
     io:format("~p [~p:handle_info] ~p=~p~n", [self(),?MODULE,StateName,_Info]),
     {next_state, StateName, StateData}.
 
-loaded({setup,Args}, _From, #state{}=S) ->
-    try lists:foldl(fun setup/2, S, Args) of
-        State ->
-            {reply, ok, configured, State}
+loaded({setup,Args}, _From, State) ->
+    try lists:foldl(fun setup/2, State, Args) of
+        #state{}=S ->
+            {reply, ok, configured, S}
     catch
-        {Reason, State} ->
-            {reply, {error,Reason}, loaded, State}
+        {Reason, #state{}=S} ->
+            {reply, {error,Reason}, loaded, S}
     end;
 loaded(_Event, _From, StateData) ->
     io:format("~p [~p:loaded] loaded=~p~n",[self(),?MODULE,_Event]),

@@ -45,9 +45,7 @@ start_link(Args)
                 {error, Reason} ->
                     ok = stop(Pid),
                     {error, Reason}
-            end;
-        Other ->
-            Other
+            end
     end.
 
 -spec stop(pid()) -> ok.
@@ -80,13 +78,13 @@ code_change(_OldVsn, State, _Extra) ->
     io:format("~p [~p:code_change] extra=~p(~p)~n", [self(),?MODULE,_Extra,_OldVsn]),
     {ok, State}.
 
-handle_call({setup,Args}, _From, #state{}=S) ->
-    try lists:foldl(fun setup/2, S, Args) of
-        State ->
-            {reply, ok, State}
+handle_call({setup,Args}, _From, State) ->
+    try lists:foldl(fun setup/2, State, Args) of
+        #state{}=S ->
+            {reply, ok, S}
     catch
-        {Reason, State} ->
-            {reply, {error,Reason}, State}
+        {Reason, #state{}=S} ->
+            {reply, {error,Reason}, S}
     end;
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
