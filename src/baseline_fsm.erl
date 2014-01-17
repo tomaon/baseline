@@ -20,7 +20,7 @@
 -include("internal.hrl").
 
 %% -- public --
--export([start_link/1, stop/1]).
+-export([start_link/1, start_link/2, stop/1]).
 -export([call/2, cast/2]).
 
 %% -- behaviour: gen_fms --
@@ -28,10 +28,11 @@
 -export([init/1, terminate/3, code_change/4,
          handle_event/3, handle_sync_event/4, handle_info/3]).
 
--export([loaded/3, configured/2, configured/3]).
+-export([loaded/3, ready/2, ready/3]).
 
 %% -- private --
 -record(state, {
+          id :: integer()
          }).
 
 %% == public ==
@@ -39,7 +40,12 @@
 -spec start_link([property()]) -> {ok,pid()}|ignore|{error,_}.
 start_link(Args)
   when is_list(Args) ->
-    case gen_fsm:start_link(?MODULE, [], []) of
+    start_link(Args, 0).
+
+-spec start_link([property()],integer()) -> {ok,pid()}|ignore|{error,_}.
+start_link(Args, Id)
+  when is_list(Args), is_integer(Id) ->
+    case gen_fsm:start_link(?MODULE, [Id], []) of
         {ok, Pid} ->
             case gen_fsm:sync_send_event(Pid, {setup,Args}, infinity) of
                 ok ->
@@ -99,7 +105,7 @@ handle_info(_Info, StateName, StateData) ->
 loaded({setup,Args}, _From, State) ->
     try lists:foldl(fun setup/2, State, Args) of
         #state{}=S ->
-            {reply, ok, configured, S}
+            {reply, ok, ready, S}
     catch
         {Reason, #state{}=S} ->
             {reply, {error,Reason}, loaded, S}
@@ -108,22 +114,22 @@ loaded(_Event, _From, StateData) ->
     io:format("~p [~p:loaded] loaded=~p~n",[self(),?MODULE,_Event]),
     {reply, {error,badarg}, loaded, StateData}.
 
-configured(_Event, StateData) ->
-    io:format("~p [~p:configured] e=~p~n", [self(),?MODULE,_Event]),
-    {next_state, configured, StateData}.
+ready(_Event, StateData) ->
+    io:format("~p [~p:ready] e=~p~n", [self(),?MODULE,_Event]),
+    {next_state, ready, StateData}.
 
-configured(_Event, _From, StateData) ->
-    io:format("~p [~p:configured] e=~p~n",[self(),?MODULE,_Event]),
-    {reply, ok, configured, StateData}.
+ready(_Event, _From, StateData) ->
+    io:format("~p [~p:ready] e=~p~n",[self(),?MODULE,_Event]),
+    {reply, ok, ready, StateData}.
 
 %% == private: state ==
 
 cleanup(#state{}) ->
     baseline:flush().
 
-setup([]) ->
+setup([Id]) ->
     _ = process_flag(trap_exit, true),
-    {ok, loaded, #state{}}.
+    {ok, loaded, #state{id = Id}}.
 
 setup(_Ignore, #state{}=S) ->
     S.

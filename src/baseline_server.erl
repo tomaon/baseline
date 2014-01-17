@@ -20,7 +20,7 @@
 -include("internal.hrl").
 
 %% -- public --
--export([start_link/1, stop/1]).
+-export([start_link/1, start_link/2, stop/1]).
 -export([call/2, cast/2]).
 
 %% -- behaviour: gen_server --
@@ -30,6 +30,7 @@
 
 %% -- private --
 -record(state, {
+          id :: integer()
          }).
 
 %% == public ==
@@ -37,7 +38,12 @@
 -spec start_link([property()]) -> {ok,pid()}|{error,_}.
 start_link(Args)
   when is_list(Args) ->
-    case gen_server:start_link(?MODULE, [], []) of
+    start_link(Args, 0).
+
+-spec start_link([property()],integer()) -> {ok,pid()}|{error,_}.
+start_link(Args, Id)
+  when is_list(Args), is_integer(Id) ->
+    case gen_server:start_link(?MODULE, [Id], []) of
         {ok, Pid} ->
             case gen_server:call(Pid, {setup,Args}, infinity) of
                 ok ->
@@ -107,9 +113,9 @@ handle_info(_Info, State) ->
 cleanup(#state{}) ->
     baseline:flush().
 
-setup([]) ->
+setup([Id]) ->
     _ = process_flag(trap_exit, true),
-    {ok, #state{}}.
+    {ok, #state{id = Id}}.
 
 setup(_Ignore, #state{}=S) ->
     S.

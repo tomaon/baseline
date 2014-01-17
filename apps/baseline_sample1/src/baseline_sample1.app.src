@@ -1,0 +1,31 @@
+%% -*- erlang -*-
+{application, baseline_sample1,
+ [
+  {description, ""},
+  {vsn, "sample"},
+  {registered, [baseline_sample1_sup]},
+  {included_applications, []},
+  {applications, [kernel,stdlib,crypto]},
+  {env, [
+         {environment,src}
+        ]},
+  {mod, {baseline_sample1_app, [
+                                {sup, [
+                                       {local,baseline_sample1_sup},
+                                       {
+                                         {simple_one_for_one, 0, 1000},
+                                         [
+                                          { baseline_fsm,
+                                            {baseline_fsm,start_link,[[]]},
+                                            permanent, 5000, worker,
+                                            [baseline_fsm,gen_fsm] }
+                                         ]
+                                       }
+                                      ]},
+                                {sup_child, [
+                                             [1],
+                                             [2],
+                                             [3]
+                                            ]}
+                               ]}}
+ ]}.

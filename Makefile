@@ -32,6 +32,7 @@
 #ERL_OPT += -sname $(1)
 #ERL_OPT += -setcookie test
  ERL_OPT += -pa ebin deps/*/ebin
+ ERL_OPT += -pz apps/*/ebin
  ERL_OPT += -config files/$(1)
 #ERL_OPT += -mnesia dir \"data/$(1)/mnesia\"
 
