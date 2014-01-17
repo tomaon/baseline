@@ -195,7 +195,11 @@ static void output_echo(driver_data_t *data,
     unsigned long wait;
     ei_decode_ulong(buf, index, &wait);
 
+#ifdef USE_DRIVER_ASYNC_PORT_KEY
     unsigned int key = driver_async_port_key(data->port);
+#else
+    unsigned int key = *(unsigned int *)data->port;
+#endif
 
     driver_async(data->port, &key, async_invoke, (void *)wait, async_free);
 

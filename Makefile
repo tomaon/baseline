@@ -84,3 +84,9 @@ n%: compile
 
 x%: compile
 	@ERL_FLAGS="" $(ERLANG_HOME)/bin/escript escript/$@.escript
+
+
+otp: otp_R15B03 otp_R16B otp_R16B01 otp_R16B02 otp_R16B03
+otp_%:
+	@echo "*** OTP: $* ***"
+	@-ERLANG_HOME=/opt/erlang/release/$* $(MAKE) clean x1
