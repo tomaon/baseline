@@ -130,15 +130,12 @@ version(Application)
 start(_StartType, StartArgs) ->
     try lists:foldl(fun setup/2, setup(), args(StartArgs)) of
         #state{sup=P}=S when is_pid(P) ->
-            ct:log("aa, s=~p", [S]),
             {ok, P, S};
         #state{}=S ->
-            ct:log("bb"),
             ok = cleanup(S),
             {error, badarg}
     catch
         {Reason, #state{}=S} ->
-            ct:log("cc"),
             ok = cleanup(S),
             {error, Reason}
     end.
@@ -146,7 +143,7 @@ start(_StartType, StartArgs) ->
 prep_stop(State) ->
     ok = cleanup(State).
 
-stop(_State) ->
+stop(ok) ->
     baseline:flush().
 
 %% == private: state ==

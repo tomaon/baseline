@@ -47,9 +47,11 @@ init(Args) ->
 
 %% == private ==
 
-stop(SupRef, [H|T]) ->
-    _ = supervisor:terminate_child(SupRef, H),
-    stop(SupRef, T);
 stop(SupRef, []) when is_pid(SupRef) ->
     true = exit(SupRef, normal),
-    ok.
+    ok;
+stop(SupRef, []) when is_atom(SupRef) -> % TODO, {atom(),node()}, {global,atom()}
+    stop(whereis(SupRef), []);
+stop(SupRef, [H|T]) ->
+    _ = supervisor:terminate_child(SupRef, H),
+    stop(SupRef, T).
