@@ -12,16 +12,21 @@
 %% -- public --
 -export([
          loaded_test/1, loaded_applications_test/1,
-         deps_test/1, env_test/1, lib_dir_test/1, version_test/1,
-         start_stop_test/1
+         running_test/1, running_applications_test/1,
+         deps_test/1, env_test/1, lib_dir_test/1, version_test/1
+        ]).
+-export([
+         %% @see baseline_sample_SUITE
+         ensure_start_test/1
         ]).
 
 %% == callback: ct ==
 
 all() -> [
           loaded_test, loaded_applications_test,
+          running_test, running_applications_test,
           deps_test, env_test, lib_dir_test, version_test,
-          start_stop_test
+          ensure_start_test
          ].
 
 init_per_suite(Config) ->
@@ -52,6 +57,23 @@ loaded_applications_test(_Config, Release) when "R16B" < Release ->
     [kernel,common_test,stdlib] = test(loaded_applications, []);
 loaded_applications_test(_Config, _Release) ->
     [kernel,stdlib] = test(loaded_applications, []).
+
+
+running_test(_Config) ->
+    X = [
+         { [kernel],    true },
+         { [stdlib],    true },
+         { [crypto],    false },
+         { [baseline],  false },
+         { [undefined], false }
+        ],
+    [ E = test(running,A) || {A,E} <- X ].
+
+running_applications_test(Config) ->
+    running_applications_test(Config, ?config(otp_release,Config)).
+
+running_applications_test(_Config, _Release) ->
+    [stdlib,kernel] = test(running_applications, []).
 
 
 deps_test(_Config) ->
@@ -96,7 +118,7 @@ version_test(_Config) ->
     end.
 
 
-start_stop_test(_Config) -> % MUST be the last
+ensure_start_test(_Config) -> % MUST be the last
     X = [
          %% kernel
          { [stdlib],    ok },
@@ -105,9 +127,9 @@ start_stop_test(_Config) -> % MUST be the last
          { [undefined], {error,baseline_ct:enoent(undefined)} }
         ],
     F = fun (A) ->
-                case test(start, A) of
+                case test(ensure_start, A) of
                     ok ->
-                        test(stop, A);
+                        apply(application, stop, A);
                     {error, Reason} ->
                         {error, Reason}
                 end

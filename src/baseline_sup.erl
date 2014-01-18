@@ -20,15 +20,17 @@
 -include("internal.hrl").
 
 %% -- public --
--export([start_link/2, stop/1]).
--export([start_child/2, terminate_child/2]).
--export([find/2]).
+-export([start_link/1, start_link/2, stop/1]).
 
 %% -- behaviour: supervisor --
 -behaviour(supervisor).
 -export([init/1]).
 
 %% == public ==
+
+-spec start_link(term()) -> startlink_ret().
+start_link(Args) ->
+    supervisor:start_link(?MODULE, Args).
 
 -spec start_link(sup_name(), term()) -> startlink_ret().
 start_link(SupName, Args) ->
@@ -37,25 +39,6 @@ start_link(SupName, Args) ->
 -spec stop(sup_ref()) -> stop_ret().
 stop(SupRef) ->
     stop(SupRef, [ element(2,E) || E <- supervisor:which_children(SupRef) ]).
-
-
--spec start_child(sup_ref(),term()) -> startchild_ret().
-start_child(SupRef, Args) ->
-    supervisor:start_child(SupRef, Args).
-
--spec terminate_child(sup_ref(),pid()) -> terminatechild_ret().
-terminate_child(SupRef, Pid) ->
-    supervisor:terminate_child(SupRef, Pid).
-
-
--spec find(sup_ref(),term()) -> node()|undefined. % pid() -> node(), for poolboy
-find(SupRef, Id) ->
-    case lists:keyfind(Id, 1, supervisor:which_children(SupRef)) of
-        {Id, Child, _Type, _Modules} ->
-            Child;
-        _ ->
-            undefined
-    end.
 
 %% == behaviour: supervisor ==
 

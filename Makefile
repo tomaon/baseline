@@ -23,6 +23,7 @@
  REBAR_ENV += CC="$(CC)"
  REBAR_ENV += CFLAGS="$(CFLAGS)"
  REBAR_ENV += LDFLAGS="$(LDFLAGS)"
+ REBAR_ENV += ERL_LIBS=apps
 
  REBAR_OPT  =
 #REBAR_OPT += --verbose 3

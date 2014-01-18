@@ -1,0 +1,14 @@
+%% -*- erlang -*-
+{application, baseline_sample,
+ [
+  {description, ""},
+  {vsn, "sample"},
+  {registered, [baseline_sample_sup]},
+  {included_applications, []},
+  {applications, [kernel,stdlib,crypto]},
+  {env, [
+         {environment,src}
+        ]},
+  {mod, {baseline_app, [
+                       ]}}
+ ]}.
