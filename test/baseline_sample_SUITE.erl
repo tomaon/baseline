@@ -24,7 +24,8 @@ all() -> [
 start_test(_Config) ->
     X = [
          %% -- one_for_one --
-         { [% 0-0, named
+         {
+           [% 0-0, named
             {sup, [
                    {local, baseline_sample_sup},
                    {
@@ -38,7 +39,8 @@ start_test(_Config) ->
            ],
            ok
          },
-         { [% 0-0
+         {
+           [% 0-0
             {sup, [
                    {
                      {one_for_one, 0, 1},
@@ -51,7 +53,8 @@ start_test(_Config) ->
            ],
            ok
          },
-         { [% 0-1
+         {
+           [% 0-1
             {sup, [
                    {
                      {one_for_one, 0, 1},
@@ -68,7 +71,8 @@ start_test(_Config) ->
            ],
            ok
          },
-         { [% 1-0
+         {
+           [% 1-0
             {sup, [
                    {
                      {one_for_one, 0, 1},
@@ -85,7 +89,8 @@ start_test(_Config) ->
            ],
            ok
          },
-         { [% 1-1
+         {
+           [% 1-1
             {sup, [
                    {
                      {one_for_one, 0, 1},
@@ -122,7 +127,8 @@ start_test(_Config) ->
            ],
            {error,{bad_start_spec,[]}}
          },
-         { [% 0-0
+         {
+           [% 0-0
             {sup, [
                    {
                      {simple_one_for_one, 0, 1},
@@ -135,7 +141,8 @@ start_test(_Config) ->
            ],
            {error,{bad_start_spec,[]}}
          },
-         { [% 0-1
+         {
+           [% 0-1
             {sup, [
                    {
                      {simple_one_for_one, 0, 1},
@@ -152,7 +159,8 @@ start_test(_Config) ->
            ],
            {error,{bad_start_spec,[]}}
          },
-         { [% 1-0
+         {
+           [% 1-0
             {sup, [
                    {
                      {simple_one_for_one, 0, 1},
@@ -169,7 +177,8 @@ start_test(_Config) ->
            ],
            ok
          },
-         %% { [ % 1-1
+         %% {
+         %%   [ % 1-1
          %%    {sup, [
          %%           {
          %%             {simple_one_for_one, 0, 1},
@@ -190,7 +199,8 @@ start_test(_Config) ->
          %%   ],
          %%   {error,{'EXIT',{badarg,_}}
          %% },
-         { [% 1-1
+         {
+           [% 1-1
             {sup, [
                    {
                      {simple_one_for_one, 0, 1},
@@ -209,11 +219,13 @@ start_test(_Config) ->
            ok
          },
          %% -- error --
-         { [
+         {
+           [
            ],
            {error,badarg}
          },
-         { [
+         {
+           [
             {sup, [
                   ]},
             {sup_child, [
@@ -221,7 +233,8 @@ start_test(_Config) ->
            ],
            {error,{badarg,sup}}
          },
-         { [
+         {
+           [
             {sup, [
                    {
                      {one_for_one, 0, 1},
@@ -233,7 +246,8 @@ start_test(_Config) ->
            ],
            {error,{badarg,sup_child}}
          },
-         { [
+         {
+           [
             {sup, [
                    {
                      {one_for_one, 0, 1},
@@ -247,7 +261,8 @@ start_test(_Config) ->
            ],
            {error,{badarg,sup_child}}
          },
-         { [
+         {
+           [
             {sup, [
                    {
                      {one_for_one, 0, 1},

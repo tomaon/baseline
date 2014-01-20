@@ -21,6 +21,7 @@
 
 %% -- public --
 -export([start_link/1, start_link/2, stop/1]).
+-export([find/2]).
 
 %% -- behaviour: supervisor --
 -behaviour(supervisor).
@@ -39,6 +40,16 @@ start_link(SupName, Args) ->
 -spec stop(sup_ref()) -> stop_ret().
 stop(SupRef) ->
     stop(SupRef, [ element(2,E) || E <- supervisor:which_children(SupRef) ]).
+
+
+-spec find(sup_ref(),term()) -> pid()|undefined.
+find(SupRef, Id) ->
+    case lists:keyfind(Id, 1, supervisor:which_children(SupRef)) of
+        {Id, Child, _Type, _Modules} ->
+            Child;
+        false ->
+            undefined
+    end.
 
 %% == behaviour: supervisor ==
 
