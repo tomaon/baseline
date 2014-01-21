@@ -25,7 +25,7 @@
 -export([load/1, unload/1]).
 -export([find/1]).
 
-%% -- callback: poolboy --
+%% -- callback: poolboy_worker --
 -export([start_link/1]).
 
 %% -- behaviour: gen_server --
@@ -97,7 +97,7 @@ find(Name)
   when is_binary(Name) ->
     find(binary_to_list(Name)).
 
-%% -- callback: poolboy --
+%% == callback: poolboy_worker ==
 
 -spec start_link([term()]) -> {ok,pid()}|{error,_}.
 start_link(Args)

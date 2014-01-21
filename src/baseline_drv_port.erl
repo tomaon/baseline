@@ -24,6 +24,7 @@
 -export([open/2, close/1]).
 -export([call/3, command/3, control/3]).
 -export([find/1]).
+-export([loaded/1, loaded_drivers/0]).
 
 %% -- private --
 -record(handle, {
@@ -39,14 +40,8 @@ load(Configs)
     try lists:foldl(fun setup/2, setup(), Configs) of
         #handle{name=undefined} ->
             {error, badarg};
-        #handle{path=P,name=N}=H ->
-            case erl_ddll:load(P, N) of
-                ok ->
-                    ok;
-                {error, Reason} ->
-                    ok = error_logger:error_report([erl_ddll:format_error(Reason),H]),
-                    {error, Reason}
-            end
+        #handle{path=P,name=N} ->
+            load(P, N, loaded(N))
     catch
         Reason ->
             {error, Reason}
@@ -121,7 +116,29 @@ find(Name)
             {error, badarg}
     end.
 
+
+-spec loaded(string()) -> boolean().
+loaded(Name)
+  when is_list(Name) ->
+    lists:member(Name, loaded_drivers()).
+
+-spec loaded_drivers() -> [atom()].
+loaded_drivers() ->
+    {ok, L} = erl_ddll:loaded_drivers(),
+    L.
+
 %% == private ==
+
+load(Path, Name, false) ->
+    case erl_ddll:load(Path, Name) of
+        ok ->
+            ok;
+        {error, Reason} ->
+            ok = error_logger:error_report([erl_ddll:format_error(Reason)]),
+            {error, Reason}
+    end;
+load(_Path, _Name, true) ->
+    ok.
 
 setup() ->
     #handle{path = baseline_app:lib_dir(undefined)}.
