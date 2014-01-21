@@ -20,9 +20,13 @@
 -include("internal.hrl").
 
 %% -- public --
--export([start_link/1, stop/1]).
+-export([start_link/2, stop/1]).
 -export([call/4, call/5]).
 -export([load/1, unload/1]).
+-export([find/1]).
+
+%% -- callback: poolboy --
+-export([start_link/1]).
 
 %% -- behaviour: gen_server --
 -behaviour(gen_server).
@@ -37,21 +41,22 @@
 
 %% == public ==
 
--spec start_link(baseline_drv()|[property()]) -> {ok,pid()}|{error,_}.
-start_link(#baseline_drv{}=H) ->
-    start_link([{handle,H}]);
-start_link(Args)
-  when is_list(Args) ->
+-spec start_link(string()|binary(),[property()]) -> {ok,pid()}|{error,_}.
+start_link(Name, Settings)
+  when is_list(Name), is_list(Settings) ->
     case gen_server:start_link(?MODULE, [], []) of
         {ok, Pid} ->
-            case gen_server:call(Pid, {setup,Args}, infinity) of
+            case gen_server:call(Pid, {setup,Name,Settings}, infinity) of
                 ok ->
                     {ok, Pid};
                 {error, Reason} ->
                     ok = stop(Pid),
                     {error, Reason}
             end
-    end.
+    end;
+start_link(Name, Settings)
+  when is_binary(Name), is_list(Settings) ->
+    start_link(binary_to_list(Name), Settings).
 
 -spec stop(pid()) -> ok.
 stop(Pid)
@@ -70,15 +75,34 @@ call(Pid, Function, Command, Args, Timeout)
     gen_server:call(Pid, {Function,Command,Args}, Timeout).
 
 
--spec load([property()]) -> {ok,baseline_drv()}|{error,_}.
+-spec load([property()]) -> ok|{error,_}.
 load(Configs)
   when is_list(Configs) ->
     baseline_drv_port:load(Configs).
 
--spec unload(baseline_drv()) -> ok|{error,_}.
-unload(Handle)
-  when is_record(Handle,baseline_drv) ->
-    baseline_drv_port:unload(Handle).
+-spec unload(string()|binary()) -> ok|{error,_}.
+unload(Name)
+  when is_list(Name) ->
+    baseline_drv_port:unload(Name);
+unload(Name)
+  when is_binary(Name) ->
+    unload(binary_to_list(Name)).
+
+
+-spec find(string()|binary()) -> {ok,port()}|{error,_}.
+find(Name)
+  when is_list(Name) ->
+    baseline_drv_port:find(Name);
+find(Name)
+  when is_binary(Name) ->
+    find(binary_to_list(Name)).
+
+%% -- callback: poolboy --
+
+-spec start_link([term()]) -> {ok,pid()}|{error,_}.
+start_link(Args)
+  when is_list(Args), 2 =:= length(Args) ->
+    apply(?MODULE, start_link, Args).
 
 %% == behaviour: gen_server ==
 
@@ -105,14 +129,11 @@ handle_call({Function,Command,Args}, _From, #state{port=P,assigned=undefined}=S)
 handle_call(_Request, _From, #state{assigned=A}=S)
   when undefined =/= A ->
     {reply, {error,ebusy}, S};
-handle_call({setup,Args}, _From, State) ->
-    try lists:foldl(fun setup/2, State, Args) of
-        #state{port=P}=S when is_port(P) ->
-            {reply, ok, S};
-        #state{}=S ->
-            {reply, {error,badarg}, S}
-    catch
-        {Reason, #state{}=S} ->
+handle_call({setup,Name,Settings}, _From, #state{}=S) ->
+    case baseline_drv_port:open(Name, Settings) of
+        {ok, Port} ->
+            {reply, ok, S#state{port = Port}};
+        {error, Reason} ->
             {reply, {error,Reason}, S}
     end;
 handle_call(stop, _From, State) ->
@@ -152,16 +173,3 @@ cleanup(#state{}) ->
 setup([]) ->
     _ = process_flag(trap_exit, true),
     {ok, #state{}}.
-
-setup({handle,Term}, #state{port=undefined}=S) ->
-    Handle = if is_record(Term,baseline_drv) -> Term;
-                true -> throw({{badarg,handle},S})
-             end,
-    case baseline_drv_port:open(Handle) of
-        {ok, Port} ->
-            S#state{port = Port};
-        {error, Reason} ->
-            throw({{Reason,handle},S})
-    end;
-setup(_Ignore, #state{}=S) ->
-    S.

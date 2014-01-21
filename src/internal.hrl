@@ -15,15 +15,6 @@
 %% Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 %% =============================================================================
 
--record(baseline_drv, {
-          path :: string(),
-          name :: string(),
-          settings :: [property()]
-         }).
-
--type(baseline_drv() :: #baseline_drv{}).
-
-
 -type filename() :: file:filename().
 -type property() :: proplists:property().
 -type startchild_ret() :: {ok,pid()}|{ok,pid(),term()}|{error,_}.

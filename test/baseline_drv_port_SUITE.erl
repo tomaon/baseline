@@ -34,7 +34,6 @@ load_test(_Config) ->
          { [[{path,undefined}]],     {error,{badarg,path}} },
          { [[{name,undefined}]],     {error,{badarg,name}} },
          { [[{name,"undefined"}]],   {error,{open_error,-10}} },
-         { [[{settings,undefined}]], {error,{badarg,settings}} },
          { [[undefined]],            {error,badarg} }
         ],
     [ E = test(load,A) || {A,E} <- X ].

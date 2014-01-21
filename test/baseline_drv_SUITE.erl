@@ -36,7 +36,7 @@ all() -> [
 init_per_suite(Config) ->
     L  = [
           {path, filename:join([baseline_ct:base_dir(2),"priv","lib"])},
-          {name, "baseline_drv"}
+          {name, <<"baseline_drv">>}
          ],
     baseline_ct:loop(skip, [{driver,L}|Config], [fun load/1, fun unload/1]).
 
@@ -57,13 +57,8 @@ end_per_testcase(_TestCase, Config) ->
 
 start_link_test(_Config) ->
     X = [
-         { [handle()],                       {error,{badarg,handle}} },
-         { [handle("undefined")],            {error,{badarg,handle}} },
-         { [[]],                             {error,badarg} },
-         { [[{handle,[]}]],                  {error,{badarg,handle}} },
-         { [[{handle,handle()}]],            {error,{badarg,handle}} },
-         { [[{handle,handle("undefined")}]], {error,{badarg,handle}} },
-         { [[undefined]],                    {error,badarg} }
+         { ["undefined",[]],     {error,badarg} },
+         { [<<"undefined">>,[]], {error,badarg} }
         ],
     [ E = test(start_link,A) || {A,E} <- X ].
 
@@ -142,7 +137,7 @@ handle_cast_test(Config) ->
 
 
 handle_info_data_test(Config) ->
-    P = baseline_drv_port:find(?config(handle,Config)),
+    P = baseline_drv:find(?config(name,Config)),
     ?config(pid,Config) ! {P,{data,<<>>}},
     receive _ -> ok  after 1000 -> ok end,
     false =:= is_process_alive(?config(pid,Config)).
@@ -171,26 +166,19 @@ test_sequential(Pid, Function, List) ->
 
 %% -- --
 
-handle() ->
-    handle(undefined).
-
-handle(Name) ->
-    handle(Name, []).
-
-handle(Name, Settings) ->
-    #baseline_drv{name = Name,settings = Settings}.
-
 load(Config) ->
-    case baseline_drv:load(?config(driver,Config)) of
-        {ok, H} ->
-            [{handle,H}|Config];
+    L = ?config(driver, Config),
+    case baseline_drv:load(L) of
+        ok ->
+            [{name,proplists:get_value(name,L)}|Config];
         {error, Reason} ->
             throw(Reason)
     end.
 
 start_link(Config) ->
     L = [
-         {handle, ?config(handle,Config)}
+         ?config(name,Config),
+         []
         ],
     case baseline_drv:start_link(L) of
         {ok, Pid} ->
@@ -219,9 +207,9 @@ stop(Config, false) ->
     Config.
 
 unload(Config) ->
-    case baseline_drv:unload(?config(handle,Config)) of
+    case baseline_drv:unload(?config(name,Config)) of
         ok ->
-            proplists:delete(handle, Config);
+            proplists:delete(name, Config);
         {error, Reason} ->
             throw(Reason)
     end.
