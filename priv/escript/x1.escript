@@ -1,6 +1,6 @@
 #!/usr/bin/env escript
 %% -*- erlang -*-
-%%! -pa ebin -pa deps/baseline/ebin -config files/n1
+%%! -pa ebin -pa deps/baseline/ebin -config priv/conf/n1
 
 run(0,P) ->
     X = [

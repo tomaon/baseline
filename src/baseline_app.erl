@@ -24,6 +24,7 @@
 -export([loaded/1, loaded_applications/0]).
 -export([running/1, running_applications/0]).
 -export([deps/1, env/1, lib_dir/1, lib_dir/2, version/1]).
+-export([registered/1]).
 
 %% -- behaviour: application --
 -behaviour(application).
@@ -122,6 +123,16 @@ version(Application)
                 {ok, List} = application:get_key(E, vsn),
                 lists:map(fun(T) -> try list_to_integer(T) catch _:_ -> T end end,
                           string:tokens(List, "."))
+        end,
+    ensure_call(F, Application).
+
+
+
+-spec registered(atom()) -> [atom()].
+registered(Application)
+  when is_atom(Application) ->
+    F = fun (E) ->
+                element(2, application:get_key(E, registered))
         end,
     ensure_call(F, Application).
 

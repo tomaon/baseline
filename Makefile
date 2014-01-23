@@ -30,12 +30,11 @@
 
 #
  ERL_OPT  =
-#ERL_OPT += -sname $(1)
-#ERL_OPT += -setcookie test
- ERL_OPT += -pa ebin deps/*/ebin
+ ERL_OPT += -sname $(1)
+ ERL_OPT += -setcookie test
+ ERL_OPT += -pa ebin
  ERL_OPT += -pz apps/*/ebin
- ERL_OPT += -config files/$(1)
-#ERL_OPT += -mnesia dir \"data/$(1)/mnesia\"
+ ERL_OPT += -config priv/conf/$(1)
 
 #PLT = .dialyzer_plt.local
 
@@ -43,11 +42,10 @@
  DIALYZER_OPT += --no_native
  DIALYZER_OPT += --plts $(ERLANG_HOME)/.dialyzer_plt $(PLT)
  DIALYZER_OPT += --src src
-#DIALYZER_OPT += -I deps
  DIALYZER_OPT += -I ..
 
 #
-default: build
+default: all
 
 #
 delete-deps get-deps:
@@ -81,11 +79,10 @@ test: compile ct
 
 #
 n%: compile
-#	@-mkdir -p data/$@/mnesia data/$@/logs
 	@$(ERLANG_HOME)/bin/erl $(call ERL_OPT,$@)
 
 x%: compile
-	@ERL_FLAGS="" $(ERLANG_HOME)/bin/escript escript/$@.escript
+	@ERL_FLAGS="" $(ERLANG_HOME)/bin/escript priv/escript/$@.escript
 
 
 otp: otp_R15B03 otp_R16B otp_R16B01 otp_R16B02 otp_R16B03

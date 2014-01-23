@@ -13,7 +13,8 @@
 -export([
          loaded_test/1, loaded_applications_test/1,
          running_test/1, running_applications_test/1,
-         deps_test/1, env_test/1, lib_dir_test/1, version_test/1
+         deps_test/1, env_test/1, lib_dir_test/1, version_test/1,
+         registered_test/1
         ]).
 -export([
          %% @see baseline_sample_SUITE
@@ -26,6 +27,7 @@ all() -> [
           loaded_test, loaded_applications_test,
           running_test, running_applications_test,
           deps_test, env_test, lib_dir_test, version_test,
+          registered_test,
           ensure_start_test
          ].
 
@@ -116,6 +118,17 @@ version_test(_Config) ->
         {error, Reason} ->
             ct:fail(Reason)
     end.
+
+
+registered_test(_Config) ->
+    X = [
+         %% kernel : length(26) = R16B03
+         %% stdlib :         6
+         { [crypto],    [crypto_sup,crypto_server] },
+         { [baseline],  [] },
+         { [undefined], {error,baseline_ct:enoent(undefined)} }
+        ],
+    [ E = test(registered,A) || {A,E} <- X ].
 
 
 ensure_start_test(_Config) -> % MUST be the last

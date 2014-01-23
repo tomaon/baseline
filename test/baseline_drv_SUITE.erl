@@ -16,6 +16,8 @@
          call_sequential_test/1, call_parallel_test/1,
          command_sequential_test/1, command_parallel_test/1,
          control_sequential_test/1, control_parallel_test/1,
+         load_test/1,
+         find_test/1,
          handle_call_test/1,
          handle_cast_test/1,
          handle_info_data_test/1, handle_info_exit_test/1, handle_info_ping_test/1
@@ -28,6 +30,8 @@ all() -> [
           call_sequential_test, call_parallel_test,
           command_sequential_test, command_parallel_test,
           control_sequential_test, control_parallel_test,
+          load_test,
+          find_test,
           handle_call_test,
           handle_cast_test,
           handle_info_data_test, handle_info_exit_test, handle_info_ping_test
@@ -120,6 +124,25 @@ control_parallel_test(Config) ->
          { [control,99,[]],                   {error,enosys} }
         ],
     test_parallel(?config(pid,Config), call, X).
+
+
+load_test(Config) ->
+    X  = [
+          { [?config(driver,Config)], ok }, % duplicate, IGNORE
+          { [[]],                     {error,badarg} },
+          { [[{path,undefined}]],     {error,{badarg,path}} },
+          { [[{name,undefined}]],     {error,{badarg,name}} },
+          { [[{name,"undefined"}]],   {error,{open_error,-10}} },
+          { [[undefined]],            {error,badarg} }
+         ],
+    [ E = test(load,A) || {A,E} <- X ].
+
+
+find_test(_Config) ->
+    X = [
+         { ["undefined"], {error,badarg} }
+        ],
+    [ E = test(find,A) || {A,E} <- X ].
 
 
 handle_call_test(Config) ->
