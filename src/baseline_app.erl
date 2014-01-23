@@ -25,6 +25,7 @@
 -export([running/1, running_applications/0]).
 -export([deps/1, env/1, lib_dir/1, lib_dir/2, version/1]).
 -export([registered/1]).
+-export([start_phase/4]).
 
 %% -- behaviour: application --
 -behaviour(application).
@@ -127,7 +128,6 @@ version(Application)
     ensure_call(F, Application).
 
 
-
 -spec registered(atom()) -> [atom()].
 registered(Application)
   when is_atom(Application) ->
@@ -135,6 +135,18 @@ registered(Application)
                 element(2, application:get_key(E, registered))
         end,
     ensure_call(F, Application).
+
+
+-spec start_phase(atom(),term(),term(),function()) -> ok|{error,_}.
+start_phase(Phase, StartType, PhaseArgs, Fun)
+  when is_atom(Phase), is_function(Fun) ->
+    case Fun(Phase, StartType, PhaseArgs) of
+        ok ->
+            ok;
+        {error, Reason} ->
+            [ baseline_sup:stop(E) || E <- baseline_app:registered(session) ],
+            {error, Reason}
+    end.
 
 %% == behaviour: application ==
 
