@@ -32,7 +32,6 @@ start(StartType, StartArgs) ->
             {error, Reason}
     end.
 
-
 prep_stop(#wrapper{state=S}=W) ->
     _ = baseline_app:prep_stop(S),
     ok = cleanup(W),

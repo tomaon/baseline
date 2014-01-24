@@ -23,9 +23,9 @@
 -export([ensure_start/1, ensure_start/2]).
 -export([loaded/1, loaded_applications/0]).
 -export([running/1, running_applications/0]).
--export([deps/1, env/1, lib_dir/1, lib_dir/2, version/1]).
--export([registered/1]).
--export([start_phase/4]).
+-export([deps/1, env/1, env/2, registered/1, version/1]).
+-export([lib_dir/1, lib_dir/2]).
+-export([start_phase/5]).
 
 %% -- behaviour: application --
 -behaviour(application).
@@ -41,10 +41,11 @@
 -spec ensure_start(atom()) -> ok|{error,_}.
 ensure_start(Application)
   when is_atom(Application) ->
-    ensure_start([Application], temporary).
+    ensure_start(Application, temporary).
 
 -spec ensure_start(atom()|[atom()],atom()) -> ok|{error,_}.
-ensure_start([], _Type) ->
+ensure_start([], Type)
+  when is_atom(Type) ->
     ok;
 ensure_start([H|T]=L, Type)
   when is_atom(H), is_atom(Type) ->
@@ -87,19 +88,41 @@ running_applications() ->
 deps(Application)
   when is_atom(Application) ->
     F = fun (E) ->
-                {ok, List} = application:get_key(E, applications),
-                List
+                get_key(E, applications)
         end,
     ensure_call(F, Application).
 
 -spec env(atom()) -> [term()].
 env(Application)
   when is_atom(Application) ->
+    env(Application, [included_applications]).
+
+-spec env(atom(),[atom()]) -> [term()].
+env(Application, Exclude)
+  when is_atom(Application), is_list(Exclude) ->
     F = fun (E) ->
                 List = application:get_all_env(E),
-                lists:foldl(fun proplists:delete/2, List, [included_applications])
+                lists:foldl(fun proplists:delete/2, List, Exclude)
         end,
     ensure_call(F, Application).
+
+-spec registered(atom()) -> [atom()].
+registered(Application)
+  when is_atom(Application) ->
+    F = fun (E) ->
+                get_key(E, registered)
+        end,
+    ensure_call(F, Application).
+
+-spec version(atom()) -> [term()].
+version(Application)
+  when is_atom(Application) ->
+    F = fun (E) ->
+                lists:map(fun(L) -> try list_to_integer(L) catch _:_ -> L end end,
+                          string:tokens(get_key(E,vsn), "."))
+        end,
+    ensure_call(F, Application).
+
 
 -spec lib_dir(atom()) -> filename().
 lib_dir(Application)
@@ -117,34 +140,15 @@ lib_dir(Application, SubDir)
             Dir
     end.
 
--spec version(atom()) -> [term()].
-version(Application)
-  when is_atom(Application) ->
-    F = fun (E) ->
-                {ok, List} = application:get_key(E, vsn),
-                lists:map(fun(T) -> try list_to_integer(T) catch _:_ -> T end end,
-                          string:tokens(List, "."))
-        end,
-    ensure_call(F, Application).
 
-
--spec registered(atom()) -> [atom()].
-registered(Application)
-  when is_atom(Application) ->
-    F = fun (E) ->
-                element(2, application:get_key(E, registered))
-        end,
-    ensure_call(F, Application).
-
-
--spec start_phase(atom(),term(),term(),function()) -> ok|{error,_}.
-start_phase(Phase, StartType, PhaseArgs, Fun)
-  when is_atom(Phase), is_function(Fun) ->
+-spec start_phase(atom(),atom(),term(),term(),function()) -> ok|{error,_}.
+start_phase(Application, Phase, StartType, PhaseArgs, Fun)
+  when is_atom(Application), is_atom(Phase), is_function(Fun) ->
     case Fun(Phase, StartType, PhaseArgs) of
         ok ->
             ok;
         {error, Reason} ->
-            [ baseline_sup:stop(E) || E <- baseline_app:registered(session) ],
+            [ baseline_sup:stop(E) || E <- ?MODULE:registered(Application) ],
             {error, Reason}
     end.
 
@@ -164,7 +168,7 @@ start(_StartType, StartArgs) ->
     end.
 
 prep_stop(State) ->
-    ok = cleanup(State).
+    cleanup(State).
 
 stop(ok) ->
     baseline:flush().
@@ -221,8 +225,7 @@ setup_child(Term, SupRef) ->
 %% == private ==
 
 args(List) ->
-    {ok, Application} = application:get_application(),
-    args(Application, List).
+    args(element(2,application:get_application()), List).
 
 args(Application, List) ->
     baseline_lists:merge(env(Application), List).
@@ -238,4 +241,12 @@ ensure_call(Fun, Application, false) ->
             ensure_call(Fun, Application, true);
         {error, Reason} ->
             {error, Reason}
+    end.
+
+get_key(Application, Key) ->
+    case application:get_key(Application, Key) of
+        {ok, Val} ->
+            Val;
+        undefined ->
+            []
     end.
