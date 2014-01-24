@@ -122,7 +122,7 @@ loaded(Name)
   when is_list(Name) ->
     lists:member(Name, loaded_drivers()).
 
--spec loaded_drivers() -> [atom()].
+-spec loaded_drivers() -> [string()].
 loaded_drivers() ->
     {ok, L} = erl_ddll:loaded_drivers(),
     L.

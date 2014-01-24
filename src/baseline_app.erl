@@ -24,6 +24,7 @@
 -export([loaded/1, loaded_applications/0]).
 -export([running/1, running_applications/0]).
 -export([deps/1, env/1, env/2, registered/1, version/1]).
+-export([get_key/2, get_key/3]).
 -export([lib_dir/1, lib_dir/2]).
 -export([start_phase/5]).
 
@@ -122,6 +123,22 @@ version(Application)
                           string:tokens(get_key(E,vsn), "."))
         end,
     ensure_call(F, Application).
+
+
+-spec get_key(atom(),atom()) -> term().
+get_key(Application, Key)
+  when is_atom(Application), is_atom(Key) ->
+    get_key(Application, Key, undefined).
+
+-spec get_key(atom(),atom(),term()) -> term().
+get_key(Application, Key, DefaultVal)
+  when is_atom(Application), is_atom(Key) ->
+    case application:get_key(Application, Key) of
+        {ok, Val} ->
+            Val;
+        undefined ->
+            DefaultVal
+    end.
 
 
 -spec lib_dir(atom()) -> filename().
@@ -241,12 +258,4 @@ ensure_call(Fun, Application, false) ->
             ensure_call(Fun, Application, true);
         {error, Reason} ->
             {error, Reason}
-    end.
-
-get_key(Application, Key) ->
-    case application:get_key(Application, Key) of
-        {ok, Val} ->
-            Val;
-        undefined ->
-            []
     end.

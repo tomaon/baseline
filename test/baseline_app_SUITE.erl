@@ -13,8 +13,9 @@
 -export([
          loaded_test/1, loaded_applications_test/1,
          running_test/1, running_applications_test/1,
-         deps_test/1, env_test/1, lib_dir_test/1, version_test/1,
-         registered_test/1
+         deps_test/1, env_test/1, registered_test/1, version_test/1,
+         get_key_test/1,
+         lib_dir_test/1
         ]).
 -export([
          %% @see baseline_sample_SUITE
@@ -26,8 +27,9 @@
 all() -> [
           loaded_test, loaded_applications_test,
           running_test, running_applications_test,
-          deps_test, env_test, lib_dir_test, version_test,
-          registered_test,
+          deps_test, env_test, registered_test, version_test,
+          get_key_test,
+          lib_dir_test,
           ensure_start_test
          ].
 
@@ -98,15 +100,15 @@ env_test(_Config) ->
         ],
     [ E = test(env,A) || {A,E} <- X ].
 
-lib_dir_test(_Config) ->
+registered_test(_Config) ->
     X = [
-         { [kernel],    filename:join([code:lib_dir(kernel,priv),lib]) },
-         { [stdlib],    filename:join([code:lib_dir(stdlib,priv),lib]) },
-         { [crypto],    filename:join([code:lib_dir(crypto,priv),lib]) },
-         { [baseline],  filename:join([baseline_ct:base_dir(),priv,lib]) },
-         { [undefined], filename:join([baseline_ct:base_dir(0),priv,lib]) }
+         %% kernel : length(26) = R16B03
+         %% stdlib :         6
+         { [crypto],    [crypto_sup,crypto_server] },
+         { [baseline],  [] },
+         { [undefined], {error,baseline_ct:enoent(undefined)} }
         ],
-    [ E = test(lib_dir,A) || {A,E} <- X ].
+    [ E = test(registered,A) || {A,E} <- X ].
 
 version_test(_Config) ->
     case file:read_file(filename:join([baseline_ct:base_dir(),"VERSION"])) of
@@ -120,15 +122,24 @@ version_test(_Config) ->
     end.
 
 
-registered_test(_Config) ->
+get_key_test(_Config) ->
     X = [
-         %% kernel : length(26) = R16B03
-         %% stdlib :         6
-         { [crypto],    [crypto_sup,crypto_server] },
-         { [baseline],  [] },
-         { [undefined], {error,baseline_ct:enoent(undefined)} }
+         { [baseline,applications], [kernel,stdlib,crypto] },
+         { [baseline,env],          [{environment,src},{included_applications,[]}] },
+         { [baseline,undefined],    undefined }
         ],
-    [ E = test(registered,A) || {A,E} <- X ].
+    [ E = test(get_key,A) || {A,E} <- X ].
+
+
+lib_dir_test(_Config) ->
+    X = [
+         { [kernel],    filename:join([code:lib_dir(kernel,priv),lib]) },
+         { [stdlib],    filename:join([code:lib_dir(stdlib,priv),lib]) },
+         { [crypto],    filename:join([code:lib_dir(crypto,priv),lib]) },
+         { [baseline],  filename:join([baseline_ct:base_dir(),priv,lib]) },
+         { [undefined], filename:join([baseline_ct:base_dir(0),priv,lib]) }
+        ],
+    [ E = test(lib_dir,A) || {A,E} <- X ].
 
 
 ensure_start_test(_Config) -> % MUST be the last
