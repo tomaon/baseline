@@ -10,10 +10,23 @@ run(0,P) ->
 run(_,_) ->
     ok.
 
-run(baseline_drv) ->
-    io:format("run: baseline_drv~n"),
+run(app) ->
+    io:format("run: app~n"),
+    N = baseline_drv,
+    case application:start(N) of
+        ok ->
+            application:stop(N);
+        {error, Reason} ->
+            io:format("ERROR: ~p (app)~n", [Reason])
+    end;
+run(direct) ->
+    io:format("run: direct~n"),
     N = <<"baseline_drv">>,
-    case baseline_drv:load([{name,N}]) of
+    L = [
+         {application,binary_to_atom(N,latin1)},
+         {name,N}
+        ],
+    case baseline_drv:load(L) of
         ok ->
             case baseline_drv:start_link(N, []) of
                 {ok, Pid} ->
@@ -28,11 +41,17 @@ run(baseline_drv) ->
         {error, Reason} ->
             io:format("ERROR: ~p (driver)~n", [Reason])
     end;
+run(dir) ->
+    io:format("run: dir~n"),
+    R = code:root_dir(),
+    io:format("~p~n", [[ E || E <- code:get_path(), not lists:prefix(R,E) ]]);
 run(_) ->
     ok.
 
 main(_) ->
     L = [
-         baseline_drv
+         dir,
+         app,
+         direct
         ],
     [ run(A) || A <- L ].

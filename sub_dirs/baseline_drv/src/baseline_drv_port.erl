@@ -143,6 +143,11 @@ load(_Path, _Name, true) ->
 setup() ->
     #handle{path = baseline_app:lib_dir(undefined)}.
 
+setup({application,Term}, #handle{}=H) ->
+    Application = if is_atom(Term) -> Term;
+                     true -> throw({badarg,application})
+                  end,
+    H#handle{path = baseline_app:lib_dir(Application)};
 setup({path,Term}, #handle{}=H) ->
     Path = if is_binary(Term) -> binary_to_list(Term);
               is_list(Term)   -> Term;

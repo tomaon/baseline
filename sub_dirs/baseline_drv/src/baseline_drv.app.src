@@ -10,6 +10,7 @@
   {mod, {baseline_drv_app, [
                             {resource, [
                                         {driver, [
+                                                  {application, baseline_drv},
                                                   {name, <<"baseline_drv">>}
                                                  ]}
                                        ]},

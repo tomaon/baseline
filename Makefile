@@ -15,11 +15,12 @@
 #REBAR_OPT += --verbose 3
 
 #
+ ERL_ENV  =
+ ERL_ENV += ERL_LIBS=..:sub_dirs
+
  ERL_OPT  =
  ERL_OPT += -sname $(1)
  ERL_OPT += -setcookie test
- ERL_OPT += -pa ebin
- ERL_OPT += -pz sub_dirs/*/ebin
  ERL_OPT += -config priv/conf/$(1)
 
 #PLT = .dialyzer_plt.local
@@ -65,10 +66,10 @@ test: compile ct
 
 #
 n%: compile
-	@$(ERLANG_HOME)/bin/erl $(call ERL_OPT,$@)
+	@$(ERL_ENV) $(ERLANG_HOME)/bin/erl $(call ERL_OPT,$@)
 
 x%: compile
-	@ERL_FLAGS="" $(ERLANG_HOME)/bin/escript priv/escript/$@.escript
+	@$(ERL_ENV) $(ERLANG_HOME)/bin/escript priv/escript/$@.escript
 
 
 otp: otp_R15B03 otp_R16B otp_R16B01 otp_R16B02 otp_R16B03
