@@ -120,7 +120,7 @@ version(Application)
   when is_atom(Application) ->
     F = fun (E) ->
                 lists:map(fun(L) -> try list_to_integer(L) catch _:_ -> L end end,
-                          string:tokens(get_key(E,vsn), "."))
+                          string:tokens(get_key(E,vsn,[]), "."))
         end,
     ensure_call(F, Application).
 
@@ -188,7 +188,7 @@ prep_stop(State) ->
     cleanup(State).
 
 stop(ok) ->
-    baseline:flush().
+    void.
 
 %% == private: state ==
 

@@ -2,9 +2,6 @@
 {incl_mods, [
              baseline,
              baseline_app,
-             baseline_ct,
-             baseline_drv,
-             baseline_drv_port,
             %baseline_fsm
              baseline_lists,
             %baseline_server

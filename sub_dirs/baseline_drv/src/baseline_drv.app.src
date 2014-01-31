@@ -1,0 +1,38 @@
+%% -*- erlang -*-
+{application, baseline_drv,
+ [
+  {description, ""},
+  {vsn, {cmd, "cat ../../VERSION"}},
+  {registered, [baseline_drv_sup]},
+  {applications, [kernel,stdlib]},
+  {env, [
+        ]},
+  {mod, {baseline_drv_app, [
+                            {resource, [
+                                        {driver, [
+                                                  {name, <<"baseline_drv">>}
+                                                 ]}
+                                       ]},
+                            {process, [
+                                       {sup, [
+                                              {local, baseline_drv_sup},
+                                              {
+                                                {one_for_one, 10, 1},
+                                                [
+                                                 { baseline_drv,
+                                                   {baseline_drv,start_link,[
+                                                                             "baseline_drv",
+                                                                             [
+                                                                              stderr_to_stdout,
+                                                                              binary,
+                                                                              {parallelism, true}
+                                                                             ]
+                                                                            ]},
+                                                   permanent, 5000, worker,
+                                                   [baseline_drv,gen_server] }
+                                                ]
+                                              }
+                                             ]}
+                                      ]}
+                           ]}}
+ ]}.

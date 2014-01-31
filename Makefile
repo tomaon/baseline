@@ -1,19 +1,7 @@
 #
  ERLANG_HOME ?= /opt/erlang/release/latest
 
-#
- CC = /opt/gnu/gcc/4.7.3/bin/gcc
-
- CFLAGS =
- CFLAGS += -std=c99
- CFLAGS += -g
- CFLAGS += -Wall
- CFLAGS += -Wextra
- CFLAGS += -Wstrict-prototypes
- CFLAGS += -fPIC
- CFLAGS += -fno-common
-
- LDFLAGS  =
+ CC ?= /opt/gnu/gcc/4.7.3/bin/gcc
 
 #
  REBAR_BIN  = ../bin/rebar
@@ -21,9 +9,7 @@
  REBAR_ENV  =
  REBAR_ENV += PATH=$(ERLANG_HOME)/bin:$(PATH)
  REBAR_ENV += CC="$(CC)"
- REBAR_ENV += CFLAGS="$(CFLAGS)"
- REBAR_ENV += LDFLAGS="$(LDFLAGS)"
- REBAR_ENV += ERL_LIBS=apps
+ REBAR_ENV += ERL_LIBS=..
 
  REBAR_OPT  =
 #REBAR_OPT += --verbose 3
@@ -33,7 +19,7 @@
  ERL_OPT += -sname $(1)
  ERL_OPT += -setcookie test
  ERL_OPT += -pa ebin
- ERL_OPT += -pz apps/*/ebin
+ ERL_OPT += -pz sub_dirs/*/ebin
  ERL_OPT += -config priv/conf/$(1)
 
 #PLT = .dialyzer_plt.local
@@ -41,7 +27,7 @@
  DIALYZER_OPT  =
  DIALYZER_OPT += --no_native
  DIALYZER_OPT += --plts $(ERLANG_HOME)/.dialyzer_plt $(PLT)
- DIALYZER_OPT += --src src
+ DIALYZER_OPT += --src src sub_dirs/*/src
  DIALYZER_OPT += -I ..
 
 #
