@@ -21,6 +21,7 @@
 
 %% -- public --
 -export([start_link/1, start_link/2, stop/1]).
+-export([cast/2]).
 -export([find/2]).
 
 %% -- behaviour: supervisor --
@@ -39,16 +40,23 @@ start_link(SupName, Args) ->
 
 -spec stop(sup_ref()) -> stop_ret().
 stop(SupRef) ->
-    stop(SupRef, [ element(2,E) || E <- supervisor:which_children(SupRef) ]).
+    stop(SupRef,
+         [ C || {_,C,_,_} <- supervisor:which_children(SupRef), is_pid(C) ]).
+
+
+-spec cast(sup_ref(),term()) -> [pid()].
+cast(SupRef, Term) ->
+    cast(SupRef, Term, [],
+         [ {C,M} || {_,C,_,[M|_]} <- supervisor:which_children(SupRef), is_pid(C) ]).
 
 
 -spec find(sup_ref(),term()) -> pid()|undefined.
 find(SupRef, Id) ->
-    case lists:keyfind(Id, 1, supervisor:which_children(SupRef)) of
-        {Id, Child, _Type, _Modules} ->
-            Child;
-        false ->
-            undefined
+    case [ C || {I,C,_,_} <- supervisor:which_children(SupRef), Id =:= I ] of
+        [] ->
+            undefined;
+        [Child] ->
+            Child
     end.
 
 %% == behaviour: supervisor ==
@@ -57,6 +65,12 @@ init(Args) ->
     {ok, Args}.
 
 %% == private ==
+
+cast(_SupRef, _Term, List, []) ->
+    List;
+cast(SupRef, Term, List, [{C,M}|T]) ->
+    ok = apply(M, cast, [C,Term]),
+    cast(SupRef, Term, [C|List], T).
 
 stop(SupRef, []) when is_pid(SupRef) ->
     true = exit(SupRef, normal),

@@ -75,7 +75,7 @@ cast(Pid, Term)
 %% == behaviour: gen_fsm ==
 
 init(Args) ->
-    io:format("~p [~p:init] args=~p~n",[self(),?MODULE,Args]),
+    io:format("~p [~p:init] args=~w~n",[self(),?MODULE,Args]),
     setup(Args).
 
 terminate(_Reason, _StateName, StateData) ->
@@ -111,15 +111,15 @@ loaded({setup,Args}, _From, State) ->
             {reply, {error,Reason}, loaded, S}
     end;
 loaded(_Event, _From, StateData) ->
-    io:format("~p [~p:loaded] loaded=~p~n",[self(),?MODULE,_Event]),
+    io:format("~p [~p:loaded] event=~p~n",[self(),?MODULE,_Event]),
     {reply, {error,badarg}, loaded, StateData}.
 
 ready(_Event, StateData) ->
-    io:format("~p [~p:ready] e=~p~n", [self(),?MODULE,_Event]),
+    io:format("~p [~p:ready] event=~p~n", [self(),?MODULE,_Event]),
     {next_state, ready, StateData}.
 
 ready(_Event, _From, StateData) ->
-    io:format("~p [~p:ready] e=~p~n",[self(),?MODULE,_Event]),
+    io:format("~p [~p:ready] event=~p~n",[self(),?MODULE,_Event]),
     {reply, ok, ready, StateData}.
 
 %% == private: state ==

@@ -29,7 +29,7 @@
  DIALYZER_OPT += --no_native
  DIALYZER_OPT += --plts $(ERLANG_HOME)/.dialyzer_plt $(PLT)
  DIALYZER_OPT += --src src sub_dirs/*/src
- DIALYZER_OPT += -I ..
+#DIALYZER_OPT += -I deps
 
 #
 default: all

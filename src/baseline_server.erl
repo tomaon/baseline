@@ -73,7 +73,7 @@ cast(Pid, Term)
 %% == behaviour: gen_server ==
 
 init(Args) ->
-    io:format("~p [~p:init] args=~p~n",[self(),?MODULE,Args]),
+    io:format("~p [~p:init] args=~w~n",[self(),?MODULE,Args]),
     setup(Args).
 
 terminate(_Reason, State) ->
