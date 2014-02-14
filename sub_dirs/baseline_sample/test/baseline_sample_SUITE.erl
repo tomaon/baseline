@@ -222,7 +222,7 @@ start_test(_Config) ->
          {
            [
            ],
-           {error,badarg}
+           {error,noproc}
          },
          {
            [
