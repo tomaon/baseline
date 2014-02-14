@@ -177,7 +177,7 @@ start(_StartType, StartArgs) ->
             {ok, P, S};
         #state{}=S ->
             ok = cleanup(S),
-            {error, badarg}
+            {error, noproc}
     catch
         {Reason, #state{}=S} ->
             ok = cleanup(S),
