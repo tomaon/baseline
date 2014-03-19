@@ -1,5 +1,6 @@
 .ct/
 .eunit/
+.rebar/
 deps/
 doc/
 ebin/

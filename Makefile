@@ -16,7 +16,7 @@
 
 #
  ERL_ENV  =
- ERL_ENV += ERL_LIBS=..:sub_dirs
+ ERL_ENV += ERL_LIBS=sub_dirs:..
 
  ERL_OPT  =
  ERL_OPT += -sname $(1)
