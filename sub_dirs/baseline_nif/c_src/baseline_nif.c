@@ -22,15 +22,72 @@
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 
+static ErlNifCharEncoding get_encoding() {
+  return ERL_NIF_LATIN1;
+}
+
+void *baseline_alloc_resource(ErlNifEnv *env, unsigned size) {
+  ErlNifResourceType *type = (ErlNifResourceType *)enif_priv_data(env);
+  return enif_alloc_resource(type, size);
+}
+
+void baseline_release_resource(void **resource) {
+  enif_release_resource(*resource);
+  *resource = NULL;
+}
+
+
+int baseline_get_atom(ErlNifEnv *env, ERL_NIF_TERM term, char *buf, unsigned size) {
+  return enif_get_atom(env, term, buf, size, get_encoding());
+}
+
+int baseline_get_atom_length(ErlNifEnv *env, ERL_NIF_TERM term, unsigned *len) {
+  return enif_get_atom_length(env, term, len, get_encoding());
+}
+
+int baseline_get_resource(ErlNifEnv *env, ERL_NIF_TERM term, void **objp) {
+  ErlNifResourceType *type = (ErlNifResourceType *)enif_priv_data(env);
+  return enif_get_resource(env, term, type, objp);
+}
+
+int baseline_get_string(ErlNifEnv *env, ERL_NIF_TERM term, char *buf, unsigned size) {
+  return enif_get_string(env, term, buf, size, get_encoding());
+}
+
+
+ERL_NIF_TERM baseline_make_atom(ErlNifEnv *env, const char *name) {
+  ERL_NIF_TERM atom;
+  return enif_make_existing_atom(env, name, &atom, get_encoding()) ? atom : enif_make_atom(env, name);
+}
+
+ERL_NIF_TERM baseline_make_resource(ErlNifEnv *env, void *obj) {
+  return enif_make_resource(env, obj);
+}
+
+ERL_NIF_TERM baseline_make_string(ErlNifEnv *env, const char *string) {
+  return enif_make_string(env, string, get_encoding());
+}
+
+
+ERL_NIF_TERM baseline_make_ok(ErlNifEnv *env, const ERL_NIF_TERM result) {
+  return enif_make_tuple2(env, baseline_make_atom(env, "ok"), result);
+}
+
+ERL_NIF_TERM baseline_make_error(ErlNifEnv *env, const ERL_NIF_TERM reason) {
+  return enif_make_tuple2(env, baseline_make_atom(env, "error"), reason);
+}
+
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+
 int baseline_set_char(ErlNifEnv *env, ERL_NIF_TERM term, void *value, unsigned size) {
 
-  unsigned int len = 0;
-  const ErlNifCharEncoding encode = ERL_NIF_LATIN1;
+  unsigned len = 0;
 
-  if (enif_is_atom(env, term) && enif_get_atom_length(env, term, &len, encode) && len < size) {
-    return enif_get_atom(env, term, (char *)value, size, encode);
+  if (enif_is_atom(env, term) && baseline_get_atom_length(env, term, &len) && len < size) {
+    return baseline_get_atom(env, term, (char *)value, size);
   } else if (enif_is_list(env, term) && enif_get_list_length(env, term, &len) && len < size) {
-    return enif_get_string(env, term, (char *)value, size, encode);
+    return baseline_get_string(env, term, (char *)value, size);
   }
 
   return 0;
@@ -101,12 +158,11 @@ int baseline_set_proplists(ErlNifEnv *env, ERL_NIF_TERM term,
 
       unsigned len = 0;
 
-      if (enif_is_atom(env, array[0]) &&
-          enif_get_atom_length(env, array[0], &len, ERL_NIF_LATIN1)) {
+      if (enif_is_atom(env, array[0]) && baseline_get_atom_length(env, array[0], &len)) {
 
         char name[len+1];
 
-        enif_get_atom(env, array[0], name, sizeof(name), ERL_NIF_LATIN1);
+        baseline_get_atom(env, array[0], name, sizeof(name));
 
         for (size_t i = 0; i < size; i++) {
           if (0 == strcmp(table[i].name, name)) {

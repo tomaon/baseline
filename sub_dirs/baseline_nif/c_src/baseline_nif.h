@@ -24,6 +24,20 @@
 
 #define UNUSED(p) (void)(p)
 
+extern void *baseline_alloc_resource(ErlNifEnv *env, unsigned size);
+extern void baseline_release_resource(void **resource);
+
+extern int baseline_get_atom(ErlNifEnv *env, ERL_NIF_TERM term, char *buf, unsigned size);
+extern int baseline_get_atom_length(ErlNifEnv *env, ERL_NIF_TERM term, unsigned *len);
+extern int baseline_get_resource(ErlNifEnv *env, ERL_NIF_TERM term, void **objp);
+extern int baseline_get_string(ErlNifEnv *env, ERL_NIF_TERM term, char *buf, unsigned size);
+
+extern ERL_NIF_TERM baseline_make_atom(ErlNifEnv *env, const char *name);
+extern ERL_NIF_TERM baseline_make_resource(ErlNifEnv *env, void *obj);
+extern ERL_NIF_TERM baseline_make_string(ErlNifEnv *env, const char *string);
+
+extern ERL_NIF_TERM baseline_make_ok(ErlNifEnv *env, const ERL_NIF_TERM result);
+extern ERL_NIF_TERM baseline_make_error(ErlNifEnv *env, const ERL_NIF_TERM reason);
 
 extern int baseline_set_char(ErlNifEnv *env, ERL_NIF_TERM term, void *value, unsigned size);
 extern int baseline_set_double(ErlNifEnv *env, ERL_NIF_TERM term, void *value, unsigned size);
