@@ -1,0 +1,6 @@
+%% -*- erlang -*-
+{application, baseline_nif,
+ [
+  {description, ""},
+  {vsn, {cmd, "cat ../../VERSION"}}
+ ]}.
