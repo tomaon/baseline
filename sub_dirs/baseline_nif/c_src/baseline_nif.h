@@ -39,6 +39,7 @@ extern ERL_NIF_TERM baseline_make_string(ErlNifEnv *env, const char *string);
 extern ERL_NIF_TERM baseline_make_ok(ErlNifEnv *env, const ERL_NIF_TERM result);
 extern ERL_NIF_TERM baseline_make_error(ErlNifEnv *env, const ERL_NIF_TERM reason);
 
+extern int baseline_set_bool(ErlNifEnv *env, ERL_NIF_TERM term, void *value, unsigned size);
 extern int baseline_set_char(ErlNifEnv *env, ERL_NIF_TERM term, void *value, unsigned size);
 extern int baseline_set_double(ErlNifEnv *env, ERL_NIF_TERM term, void *value, unsigned size);
 extern int baseline_set_int(ErlNifEnv *env, ERL_NIF_TERM term, void *value, unsigned size);

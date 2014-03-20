@@ -15,6 +15,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 // =============================================================================
 
+#include <ctype.h>
 #include <string.h>
 
 #include "baseline_nif.h"
@@ -79,6 +80,22 @@ ERL_NIF_TERM baseline_make_error(ErlNifEnv *env, const ERL_NIF_TERM reason) {
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
+
+int baseline_set_bool(ErlNifEnv *env, ERL_NIF_TERM term, void *value, unsigned size) {
+
+  char buf[6];
+
+  if (baseline_set_char(env, term, buf, sizeof(buf))) {
+
+    for (char *p = buf; *p; ++p) *p = tolower(*p);
+
+    *(char *)value = 0 == strcmp("true", buf) ? 1 : 0;
+
+    return 1;
+  }
+
+  return 0;
+}
 
 int baseline_set_char(ErlNifEnv *env, ERL_NIF_TERM term, void *value, unsigned size) {
 
@@ -178,5 +195,5 @@ int baseline_set_proplists(ErlNifEnv *env, ERL_NIF_TERM term,
 
   } // for
 
-  return 0;
+  return 1;
 }
