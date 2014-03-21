@@ -50,7 +50,7 @@ build: get-deps
 build_plt:
 	@$(ERLANG_HOME)/bin/dialyzer --$@ --output_plt $(PLT) --apps deps/*/ebin
 
-clean: delete-autosave
+clean: delete-autosave $(foreach d,$(wildcard sub_dirs/*),$d.clean)
 	@$(REBAR_ENV) $(REBAR_BIN) $(REBAR_OPT) $@ skip_deps=true
 
 delete-autosave:
@@ -61,6 +61,10 @@ dialyzer:
 
 distclean: clean delete-deps
 	@-rm -rf deps $(PLT)
+
+sub_dirs/%:
+	@(cd sub_dirs/$(basename $*); \
+	  $(REBAR_ENV) $(realpath $(REBAR_BIN)) $(REBAR_OPT) $(subst .,,$(suffix $*)))
 
 test: compile ct
 

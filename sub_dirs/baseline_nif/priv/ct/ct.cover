@@ -1,0 +1,4 @@
+%% -*- erlang -*-
+{incl_mods, [
+             baseline_nif_sample
+            ]}.

@@ -13,11 +13,13 @@ typedef struct _nif_resource_t nif_resource_t;
 
 struct _nif_resource_t {
   int id;
-  int option_1;
-  unsigned int option_2;
-  char option_3;
-  char option_4[10];
-  char option_5[10];
+  int i;
+  unsigned int ui;
+  long l;
+  unsigned long ul;
+  char b;
+  char a[10];
+  char s[10];
 };
 
 // -----------------------------------------------------------------------------
@@ -29,11 +31,13 @@ static nif_resource_t *alloc_resource(ErlNifEnv *env) {
 
 static void init_resource(nif_resource_t *resource, int id) {
   resource->id = id;
-  resource->option_1 = 0;
-  resource->option_2 = 0;
-  resource->option_3 = 0;
-  resource->option_4[0] = '\0';
-  resource->option_5[0] = '\0';
+  resource->i = 0;
+  resource->ui = 0;
+  resource->l = 0;
+  resource->ul = 0;
+  resource->b = 0;
+  resource->a[0] = '\0';
+  resource->s[0] = '\0';
 }
 
 static int get_resource(ErlNifEnv *env, ERL_NIF_TERM term, nif_resource_t **objp) {
@@ -127,11 +131,13 @@ static ERL_NIF_TERM get_nif(ErlNifEnv *env, int argc, const ERL_NIF_TERM *argv) 
     if (get_resource(env, argv[0], &resource)) {
 
       ERL_NIF_TERM arr[] = {
-        enif_make_int(env, resource->option_1),
-        enif_make_uint(env, resource->option_2),
-        enif_make_int(env, resource->option_3), // bool
-        make_atom(env, resource->option_4),
-        make_string(env, resource->option_5),
+        enif_make_int(env, resource->i),
+        enif_make_uint(env, resource->ui),
+        enif_make_long(env, resource->l),
+        enif_make_ulong(env, resource->ul),
+        enif_make_int(env, resource->b),
+        make_atom(env, resource->a),
+        make_string(env, resource->s),
       };
 
       unsigned cnt = sizeof(arr) / sizeof(arr[0]);
@@ -155,11 +161,13 @@ static ERL_NIF_TERM set_nif(ErlNifEnv *env, int argc, const ERL_NIF_TERM *argv) 
     if (get_resource(env, argv[0], &resource)) {
 
       baseline_opt_t TABLE[] = {
-        { "option_1", &resource->option_1, sizeof(resource->option_1), baseline_set_int },
-        { "option_2", &resource->option_2, sizeof(resource->option_2), baseline_set_uint },
-        { "option_3", &resource->option_3, sizeof(resource->option_3), baseline_set_bool },
-        { "option_4", &resource->option_4, sizeof(resource->option_4), baseline_set_char },
-        { "option_5", &resource->option_5, sizeof(resource->option_5), baseline_set_char },
+        { "i", &resource->i, sizeof(resource->i), baseline_set_int },
+        { "ui", &resource->ui, sizeof(resource->ui), baseline_set_uint },
+        { "l", &resource->l, sizeof(resource->l), baseline_set_long },
+        { "ul", &resource->ul, sizeof(resource->ul), baseline_set_ulong },
+        { "b", &resource->b, sizeof(resource->b), baseline_set_bool },
+        { "a", &resource->a, sizeof(resource->a), baseline_set_char },
+        { "s", &resource->s, sizeof(resource->s), baseline_set_char },
       };
 
       size_t TABLE_SIZE = sizeof(TABLE) / sizeof(TABLE[0]);

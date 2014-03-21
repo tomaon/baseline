@@ -83,6 +83,8 @@ ERL_NIF_TERM baseline_make_error(ErlNifEnv *env, const ERL_NIF_TERM reason) {
 
 int baseline_set_bool(ErlNifEnv *env, ERL_NIF_TERM term, void *value, unsigned size) {
 
+  UNUSED(size);
+
   char buf[6];
 
   if (baseline_set_char(env, term, buf, sizeof(buf))) {
