@@ -19,7 +19,7 @@
  ERL_ENV += ERL_LIBS=sub_dirs:..
 
  ERL_OPT  =
- ERL_OPT += -sname $(1)
+ ERL_OPT += -sname $(1)@localhost
  ERL_OPT += -setcookie test
  ERL_OPT += -config priv/conf/$(1)
 
@@ -48,7 +48,7 @@ build: get-deps
 	@$(REBAR_ENV) $(REBAR_BIN) $(REBAR_OPT) compile
 
 build_plt:
-	@$(ERLANG_HOME)/bin/dialyzer --$@ --output_plt $(PLT) --apps deps/*/ebin
+	@$(ERLANG_HOME)/bin/dialyzer --$@ --output_plt $(PLT) -r deps
 
 clean: delete-autosave $(foreach d,$(wildcard sub_dirs/*),$d.clean)
 	@$(REBAR_ENV) $(REBAR_BIN) $(REBAR_OPT) $@ skip_deps=true

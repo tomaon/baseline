@@ -70,13 +70,4 @@ set_nif(_Resource, _List) ->
 %% == private ==
 
 lib_dir(Application) ->
-    filename:join(lib_dir(Application,priv), "lib").
-
-lib_dir(Application, SubDir) ->
-    case code:lib_dir(Application, SubDir) of
-        {error, bad_name} ->
-            {ok, Dir} = file:get_cwd(),
-            filename:join(Dir, atom_to_list(SubDir));
-        Dir ->
-            Dir
-    end.
+    baseline_app:lib_dir(Application).

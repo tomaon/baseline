@@ -57,7 +57,7 @@ loaded_test(_Config) ->
 loaded_applications_test(Config) ->
     loaded_applications_test(Config, ?config(otp_release,Config)).
 
-loaded_applications_test(_Config, Release) when "R16B" < Release ->
+loaded_applications_test(_Config, Release) when "R16B" < Release; "17" =< Release ->
     [kernel,common_test,stdlib] = test(loaded_applications, []);
 loaded_applications_test(_Config, _Release) ->
     [kernel,stdlib] = test(loaded_applications, []).
@@ -104,7 +104,7 @@ registered_test(_Config) ->
     X = [
          %% kernel : length(26) = R16B03
          %% stdlib :         6
-         { [crypto],    [crypto_sup,crypto_server] },
+         { [crypto],    [crypto_sup,crypto_server] }, % [], > 17
          { [baseline],  [] },
          { [undefined], {error,baseline_ct:enoent(undefined)} }
         ],
