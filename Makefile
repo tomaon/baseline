@@ -1,7 +1,7 @@
 #
  ERLANG_HOME ?= /opt/erlang/release/latest
 
- CC ?= /opt/gnu/gcc/4.7.3/bin/gcc
+ CC ?= gcc
 
 #
  REBAR_BIN  = ../bin/rebar
@@ -29,10 +29,9 @@
  DIALYZER_OPT += --no_native
  DIALYZER_OPT += --plts $(ERLANG_HOME)/.dialyzer_plt $(PLT)
  DIALYZER_OPT += --src src sub_dirs/*/src
-#DIALYZER_OPT += -I deps
 
 #
-default: all
+default: compile
 
 #
 delete-deps get-deps:
@@ -48,7 +47,7 @@ build: get-deps
 	@$(REBAR_ENV) $(REBAR_BIN) $(REBAR_OPT) compile
 
 build_plt:
-	@$(ERLANG_HOME)/bin/dialyzer --$@ --output_plt $(PLT) -r deps
+	@$(ERLANG_HOME)/bin/dialyzer --$@ --output_plt $(PLT)
 
 clean: delete-autosave $(foreach d,$(wildcard sub_dirs/*),$d.clean)
 	@$(REBAR_ENV) $(REBAR_BIN) $(REBAR_OPT) $@ skip_deps=true
