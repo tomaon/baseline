@@ -9,15 +9,14 @@
 -export([connect/4, close/1]).
 -export([getopts/2, setopts/2]).
 -export([getopt_active/1, setopt_active/2]).
--export([send/2, recv/2, recv/3, recv/4]).
--export([sync/3, sync/4]).
+-export([send/2, recv/3, recv/4]).
+-export([call/4]).
 
 %% -- internal --
 -record(handle,
         {
-          socket  :: port(),                    % gen_tcp:socket()
-          timeout :: timeout(),
-          buf     :: binary()
+          socket :: port(),                     % gen_tcp:socket()
+          buf    :: binary()
         }).
 
 -type(handle() :: #handle{}).
@@ -29,7 +28,7 @@
 connect(Address, Port, Options, Timeout) ->
     try gen_tcp:connect(Address, Port, Options, Timeout) of
         {ok, Socket} ->
-            {ok, #handle{socket = Socket, timeout = Timeout, buf = <<>>}};
+            {ok, #handle{socket = Socket, buf = <<>>}};
         {error, Reason} ->
             {error, Reason}
     catch
@@ -68,29 +67,20 @@ send(#handle{socket=S}, Binary) ->
             {error, Reason}
     end.
 
--spec recv(handle(),binary:cp()|non_neg_integer())
+-spec recv(handle(),binary:cp()|non_neg_integer(),timeout())
           -> {ok,binary(),handle()}|{error,_,handle()}.
-recv(#handle{buf=B,timeout=T}=H, Term) ->
-    recv(H, B, Term, T).
-
--spec recv(handle(),binary(),binary:cp()|non_neg_integer())
-          -> {ok,binary(),handle()}|{error,_,handle()}.
-recv(#handle{buf=B,timeout=T}=H, Binary, Term) ->
-    recv(H, <<B/binary,Binary/binary>>, Term, T).
-
--spec recv(handle(),binary(),binary:cp()|non_neg_integer(),timeout())
-          -> {ok,binary(),handle()}|{error,_,handle()}.
-recv(#handle{socket=S}=H, Binary, Term, Timeout)
-  when is_integer(Term) ->
-    case recv_binary(S, Binary, Term, Timeout) of
+recv(#handle{socket=S,buf=B}=H, Term, Timeout) ->
+    case dispatch(S, B, Term, Timeout) of
         {ok, Found, Rest} ->
             {ok, Found, H#handle{buf = Rest}};
         {error, Reason} ->
             {error, Reason, H}
-    end;
-recv(#handle{socket=S}=H, Binary, Term, Timeout)
-  when is_binary(Term); is_tuple(Term) -> % {bm,_}
-    case recv_text(S, Binary, Term, Timeout) of
+    end.
+
+-spec recv(handle(),binary(),binary:cp()|non_neg_integer(),timeout())
+          -> {ok,binary(),handle()}|{error,_,handle()}.
+recv(#handle{socket=S,buf=B}=H, Binary, Term, Timeout) ->
+    case dispatch(S, <<B/binary,Binary/binary>>, Term, Timeout) of
         {ok, Found, Rest} ->
             {ok, Found, H#handle{buf = Rest}};
         {error, Reason} ->
@@ -98,18 +88,13 @@ recv(#handle{socket=S}=H, Binary, Term, Timeout)
     end.
 
 
--spec sync(handle(),binary(),binary:cp()|non_neg_integer())
+-spec call(handle(),binary(),binary:cp()|non_neg_integer(),timeout())
           -> {ok,binary(),handle()}|{error,_,handle()}.
-sync(#handle{timeout=T}=H, Packet, Term) ->
-    sync(H, Packet, Term, T).
-
--spec sync(handle(),binary(),binary:cp()|non_neg_integer(),timeout())
-          -> {ok,binary(),handle()}|{error,_,handle()}.
-sync(#handle{buf=B}=H, Packet, Term, Timeout) ->
+call(#handle{}=H, Packet, Term, Timeout) ->
     {ok, Options} = getopt_active(H),
     case setopt_active(H, false) andalso send(H, Packet) of
         ok ->
-            case recv(H, B, Term, Timeout) of
+            case recv(H, Term, Timeout) of
                 {ok, Binary, Handle} ->
                     true = setopts(H, Options),
                     {ok, Binary, Handle};
@@ -123,6 +108,13 @@ sync(#handle{buf=B}=H, Packet, Term, Timeout) ->
     end.
 
 %% == internal ==
+
+dispatch(Socket, Binary, Term, Timeout)
+  when is_integer(Term) ->
+    recv_binary(Socket, Binary, Term, Timeout);
+dispatch(Socket, Binary, Term, Timeout)
+  -> % when is_tuple(Term) -> % {bm,_}
+    recv_text(Socket, Binary, Term, Timeout).
 
 recv_binary(Socket, Binary, Size, Timeout) ->
     recv_binary(Socket, Binary, Size, Timeout, size(Binary) >= Size).
