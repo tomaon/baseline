@@ -5,6 +5,5 @@
   {vsn, {cmd, "cat VERSION"}},
   {applications, [kernel,stdlib,crypto]},
   {env, [
-         {environment,src}
         ]}
  ]}.

@@ -7,7 +7,6 @@
   {included_applications, []},
   {applications, [kernel,stdlib,crypto]},
   {env, [
-         {environment,src}
         ]},
   {mod, {baseline_app, [
                        ]}}
