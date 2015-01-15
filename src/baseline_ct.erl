@@ -24,7 +24,6 @@
 -export([enoent/1]).
 -export([test/3, test_parallel/3, test_sequential/3]).
 -export([loop/3]).
--export([prefix/2]).
 -export([set_env/1]).
 
 %% == public ==
@@ -82,16 +81,6 @@ loop(Type, Config, List)
                 skip -> {skip, Reason}
             end
     end.
-
-
--spec prefix(atom(),binary()) -> boolean().
-prefix(Atom, Binary)
-  when is_atom(Atom), is_binary(Binary) ->
-    B = atom_to_binary(Atom,latin1),
-    prefix(B, size(B), Binary, size(Binary)).
-
-prefix(Term1, Size1, Term2, Size2) ->
-    Size1 >= Size2 andalso nomatch =/= binary:match(Term1, Term2, [{scope,{0,Size2}}]).
 
 
 -spec set_env([property()]) -> ok.
