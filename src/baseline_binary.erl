@@ -24,10 +24,12 @@
 
 %% == public ==
 
+-spec prefix(binary(),binary()) -> boolean().
 prefix(Binary1, Binary2)
   when is_binary(Binary1), is_binary(Binary2) ->
     prefix(Binary1, byte_size(Binary1), Binary2, byte_size(Binary2)).
 
+-spec suffix(binary(),binary()) -> boolean().
 suffix(Binary1, Binary2)
   when is_binary(Binary1), is_binary(Binary2) ->
     suffix(Binary1, byte_size(Binary1), Binary2, byte_size(Binary2)).
