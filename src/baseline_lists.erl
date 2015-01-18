@@ -24,6 +24,7 @@
 -export([equalize/2]).
 -export([except/2]).
 -export([merge/2]).
+-export([combine/2, combine/3]).
 
 %% == public ==
 
@@ -73,3 +74,24 @@ except(List1, List2)
 merge(List1, List2)
   when is_list(List1), is_list(List2) ->
     lists:sort(List1 ++ baseline_lists:except(List2, List1)).
+
+
+-spec combine([tuple()],[tuple()]) -> [tuple()].
+combine(List1, List2) ->
+    combine(List1, List2, []).
+
+-spec combine([tuple()],[tuple()],[term()]) -> [tuple()].
+combine(List1, List2, Excludes) ->
+    lists:filtermap(fun ({K,V}) ->
+                            case lists:keyfind(K, 1, List2) of
+                                {K, N} ->
+                                    {true, {N,V}};
+                                false ->
+                                    case lists:member(K, Excludes) of
+                                        false ->
+                                            {true, {K,V}};
+                                        true ->
+                                            false
+                                    end
+                            end
+                    end, List1).
