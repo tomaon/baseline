@@ -23,6 +23,7 @@
 -export([start_link/1, start_link/2, stop/1]).
 -export([cast/2]).
 -export([find/2]).
+-export([children/1]).
 
 %% -- behaviour: supervisor --
 -behaviour(supervisor).
@@ -40,8 +41,7 @@ start_link(SupName, Args) ->
 
 -spec stop(sup_ref()) -> stop_ret().
 stop(SupRef) ->
-    stop(SupRef,
-         [ C || {_,C,_,_} <- supervisor:which_children(SupRef), is_pid(C) ]).
+    stop(SupRef, children(SupRef)).
 
 
 -spec cast(sup_ref(),term()) -> [pid()].
@@ -58,6 +58,11 @@ find(SupRef, Id) ->
         [Child] ->
             Child
     end.
+
+
+-spec children(sup_ref()) -> [pid()].
+children(SupRef) ->
+    [ C || {_,C,_,_} <- supervisor:which_children(SupRef), is_pid(C) ].
 
 %% == behaviour: supervisor ==
 
