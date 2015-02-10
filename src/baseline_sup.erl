@@ -62,7 +62,8 @@ find(SupRef, Id) ->
 
 -spec children(sup_ref()) -> [pid()].
 children(SupRef) ->
-    [ C || {_,C,_,_} <- supervisor:which_children(SupRef), is_pid(C) ].
+    F = fun ({_,C,_,_}, A) when is_pid(C) -> [C|A]; (_, A) -> A end,
+    lists:foldl(F, [], supervisor:which_children(SupRef)). % reverse
 
 %% == behaviour: supervisor ==
 
