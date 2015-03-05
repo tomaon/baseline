@@ -290,12 +290,10 @@ test(Args) ->
 test(Name, Args) ->
     [ apply(application,F, [Name]) || F <- [ unload, load ] ],
     [ application:set_env(Name,K,V) || {K,V} <- Args ],
-    V = case apply(Name, start, []) of
-            ok ->
-                _ = apply(Name, stop, []),
-                ok;
-            {error, {Reason,_}} ->
-                {error, Reason}
-        end,
-    ct:log("env=~p -> ~p", [baseline_app:env(Name),V]),
-    V.
+    case apply(Name, start, []) of
+        ok ->
+            _ = apply(Name, stop, []),
+            ok;
+        {error, {Reason,_}} ->
+            {error, Reason}
+    end.

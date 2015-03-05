@@ -30,7 +30,7 @@
 %% == behaviour: application ==
 
 start(StartType, StartArgs) ->
-    L = args(StartArgs),
+    L = baseline_app:args(baseline_drv, StartArgs),
     try lists:foldl(fun setup/2, setup(), proplists:get_value(resource,L,[])) of
         #wrapper{}=W ->
             case baseline_app:start(StartType, proplists:get_value(process,L,[])) of
@@ -78,11 +78,3 @@ setup({driver,Term}, #wrapper{driver=D}=W) ->
     end;
 setup(_Ignore, #wrapper{}=W) ->
     W.
-
-%% == private ==
-
-args(List) ->
-    args(baseline_drv, List).
-
-args(App, List) ->
-    baseline_lists:merge(baseline_app:env(App), List).

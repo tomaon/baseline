@@ -23,14 +23,14 @@
 -export([ensure_start/1, ensure_start/2]).
 -export([loaded/1, loaded_applications/0]).
 -export([running/1, running_applications/0]).
--export([deps/1, args/1, args/2, env/1, env/2, registered/1, version/1]).
+-export([deps/1, args/1, args/2, registered/1, version/1]).
 -export([get_key/2, get_key/3]).
 -export([lib_dir/1, lib_dir/2]).
--export([start_phase/5]).
 
 %% -- behaviour: application --
 -behaviour(application).
 -export([start/2, prep_stop/1, stop/1]).
+-export([start_phase/5]).
 
 %% -- private --
 -record(state, {
@@ -106,20 +106,6 @@ args(Application, List) ->
             baseline_lists:merge(Env, List)
     end.
 
--spec env(atom()) -> [term()].
-env(Application)
-  when is_atom(Application) ->
-    env(Application, [included_applications]).
-
--spec env(atom(),[atom()]) -> [term()].
-env(Application, Exclude)
-  when is_atom(Application), is_list(Exclude) ->
-    F = fun (E) ->
-                List = application:get_all_env(E),
-                lists:foldl(fun proplists:delete/2, List, Exclude)
-        end,
-    ensure_call(F, Application).
-
 -spec registered(atom()) -> [atom()].
 registered(Application)
   when is_atom(Application) ->
@@ -170,18 +156,6 @@ lib_dir(Application, SubDir)
             Dir
     end.
 
-
--spec start_phase(atom(),atom(),term(),term(),function()) -> ok|{error,_}.
-start_phase(Application, Phase, StartType, PhaseArgs, Fun)
-  when is_atom(Application), is_atom(Phase), is_function(Fun) ->
-    case Fun(Phase, StartType, PhaseArgs) of
-        ok ->
-            ok;
-        {error, Reason} ->
-            [ baseline_sup:stop(E) || E <- ?MODULE:registered(Application) ],
-            {error, Reason}
-    end.
-
 %% == behaviour: application ==
 
 start(_StartType, StartArgs) ->
@@ -202,6 +176,17 @@ prep_stop(State) ->
 
 stop(ok) ->
     void.
+
+
+start_phase(Application, Phase, StartType, PhaseArgs, Fun)
+  when is_atom(Application), is_atom(Phase), is_function(Fun) ->
+    case Fun(Phase, StartType, PhaseArgs) of
+        ok ->
+            ok;
+        {error, Reason} ->
+            [ baseline_sup:stop(E) || E <- ?MODULE:registered(Application) ],
+            {error, Reason}
+    end.
 
 %% == private: state ==
 
@@ -266,3 +251,15 @@ ensure_call(Fun, Application, false) ->
         {error, Reason} ->
             {error, Reason}
     end.
+
+env(Application)
+  when is_atom(Application) ->
+    env(Application, [included_applications]).
+
+env(Application, Exclude)
+  when is_atom(Application), is_list(Exclude) ->
+    F = fun (E) ->
+                List = application:get_all_env(E),
+                lists:foldl(fun proplists:delete/2, List, Exclude)
+        end,
+    ensure_call(F, Application).
