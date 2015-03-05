@@ -13,7 +13,7 @@
 -export([
          loaded_test/1, loaded_applications_test/1,
          running_test/1, running_applications_test/1,
-         deps_test/1, env_test/1, registered_test/1, version_test/1,
+         deps_test/1, args_test/1, env_test/1, registered_test/1, version_test/1,
          get_key_test/1,
          lib_dir_test/1
         ]).
@@ -27,7 +27,7 @@
 all() -> [
           loaded_test, loaded_applications_test,
           running_test, running_applications_test,
-          deps_test, env_test, registered_test, version_test,
+          deps_test, args_test, env_test, registered_test, version_test,
           get_key_test,
           lib_dir_test,
           ensure_start_test
@@ -90,6 +90,16 @@ deps_test(_Config) ->
         ],
     [ E = test(deps,A) || {A,E} <- X ].
 
+args_test(_Config) ->
+    X = [
+         { [kernel],    [{error_logger,tty}] },
+         { [stdlib],    [] },
+         { [crypto],    [] },
+         { [baseline],  [{environment,src}] },
+         { [undefined], {error,baseline_ct:enoent(undefined)} }
+        ],
+    [ E = test(args,A) || {A,E} <- X ].
+
 env_test(_Config) ->
     X = [
          { [kernel],    [{error_logger,tty}] },
@@ -104,7 +114,7 @@ registered_test(_Config) ->
     X = [
          %% kernel : length(26) = R16B03
          %% stdlib :         6
-         { [crypto],    [crypto_sup,crypto_server] }, % [], > 17
+         { [crypto],    [] }, % [crypto_sup,crypto_server] < 17
          { [baseline],  [] },
          { [undefined], {error,baseline_ct:enoent(undefined)} }
         ],

@@ -23,7 +23,7 @@
 -export([ensure_start/1, ensure_start/2]).
 -export([loaded/1, loaded_applications/0]).
 -export([running/1, running_applications/0]).
--export([deps/1, env/1, env/2, registered/1, version/1]).
+-export([deps/1, args/1, args/2, env/1, env/2, registered/1, version/1]).
 -export([get_key/2, get_key/3]).
 -export([lib_dir/1, lib_dir/2]).
 -export([start_phase/5]).
@@ -92,6 +92,19 @@ deps(Application)
                 get_key(E, applications)
         end,
     ensure_call(F, Application).
+
+-spec args(atom()) -> [property()].
+args(Application) ->
+    args(Application, []).
+
+-spec args(atom(),[property()]) -> [property()].
+args(Application, List) ->
+    case env(Application) of
+        {error, Reason} ->
+            {error, Reason};
+        Env ->
+            baseline_lists:merge(Env, List)
+    end.
 
 -spec env(atom()) -> [term()].
 env(Application)
@@ -240,12 +253,6 @@ setup_child(Term, SupRef) ->
     end.
 
 %% == private ==
-
-args(List) ->
-    args(element(2,application:get_application()), List).
-
-args(Application, List) ->
-    baseline_lists:merge(env(Application), List).
 
 ensure_call(Fun, Application) ->
     ensure_call(Fun, Application, loaded(Application)).
