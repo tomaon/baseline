@@ -25,6 +25,7 @@
 -export([except/2]).
 -export([merge/2]).
 -export([combine/2, combine/3]).
+-export([get_as_binary/4, get_as_integer/4, get_as_list/4]).
 
 %% == public ==
 
@@ -95,3 +96,30 @@ combine(List1, List2, Excludes) ->
                                     end
                             end
                     end, List1).
+
+-spec get_as_binary(term(),pos_integer(),[tuple()],binary()) -> binary().
+get_as_binary(Key, N, List, DefaultValue) ->
+    case lists:keyfind(Key, N, List) of
+        {Key, Term} when is_binary(Term) -> Term;
+        {Key, Term} when is_integer(Term) -> integer_to_binary(Term);
+        {Key, Term} when is_list(Term) -> list_to_binary(Term);
+        false -> DefaultValue
+    end.
+
+-spec get_as_integer(term(),pos_integer(),[tuple()],integer()) -> integer().
+get_as_integer(Key, N, List, DefaultValue) ->
+    case lists:keyfind(Key, N, List) of
+        {Key, Term} when is_integer(Term) -> Term;
+        {Key, Term} when is_binary(Term) -> binary_to_integer(Term);
+        {Key, Term} when is_list(Term) -> list_to_integer(Term);
+        false -> DefaultValue
+    end.
+
+-spec get_as_list(term(),pos_integer(),[tuple()],list()) -> list().
+get_as_list(Key, N, List, DefaultValue) ->
+    case lists:keyfind(Key, N, List) of
+        {Key, Term} when is_list(Term) -> Term;
+        {Key, Term} when is_binary(Term) -> binary_to_list(Term);
+        {Key, Term} when is_integer(Term) -> integer_to_list(Term);
+        false -> DefaultValue
+    end.

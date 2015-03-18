@@ -13,7 +13,8 @@
          choose_test/1,
          equalize_test/1,
          except_test/1,
-         merge_test/1
+         merge_test/1,
+         get_as_binary_test/1, get_as_integer_test/1, get_as_list_test/1
         ]).
 
 %% == callback: ct ==
@@ -22,7 +23,8 @@ all() -> [
           choose_test,
           equalize_test,
           except_test,
-          merge_test
+          merge_test,
+          get_as_binary_test, get_as_integer_test, get_as_list_test
          ].
 
 %% == public ==
@@ -85,6 +87,36 @@ merge_test(_Config) ->
          { [[a,b],[a,b]], [a,b] }
         ],
     [ E = test(merge,A) || {A,E} <- X ].
+
+get_as_binary_test(_Config) ->
+    L = [ {a,1}, {b,"2"}, {c,<<"3">>} ],
+    X = [
+         { [a,1,L,<<"?">>], <<"1">> },
+         { [b,1,L,<<"?">>], <<"2">> },
+         { [c,1,L,<<"?">>], <<"3">> },
+         { [d,1,L,<<"?">>], <<"?">> }
+        ],
+    [ E = test(get_as_binary,A) || {A,E} <- X ].
+
+get_as_integer_test(_Config) ->
+    L = [ {a,1}, {b,"2"}, {c,<<"3">>} ],
+    X = [
+         { [a,1,L,-1], 1 },
+         { [b,1,L,-1], 2 },
+         { [c,1,L,-1], 3 },
+         { [d,1,L,-1], -1 }
+        ],
+    [ E = test(get_as_integer,A) || {A,E} <- X ].
+
+get_as_list_test(_Config) ->
+    L = [ {a,1}, {b,"2"}, {c,<<"3">>} ],
+    X = [
+         { [a,1,L,"?"], "1" },
+         { [b,1,L,"?"], "2" },
+         { [c,1,L,"?"], "3" },
+         { [d,1,L,"?"], "?" }
+        ],
+    [ E = test(get_as_list,A) || {A,E} <- X ].
 
 %% == private ==
 
