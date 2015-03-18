@@ -105,19 +105,15 @@ recv(#handle{socket=S,buf=B}=H, Binary, Term, Timeout) ->
 -spec call(handle(),binary(),binary:cp()|non_neg_integer(),timeout())
           -> {ok,binary(),handle()}|{error,_,handle()}.
 call(#handle{}=H, Packet, Term, Timeout) ->
-    {ok, Options} = getopt_active(H),
-    case setopt_active(H, false) andalso send(H, Packet) of
+    case send(H, Packet) of
         ok ->
             case recv(H, Term, Timeout) of
                 {ok, Binary, Handle} ->
-                    true = setopts(H, Options),
                     {ok, Binary, Handle};
                 {error, Reason, Handle} ->
-                    true = setopts(Handle, Options),
                     {error, Reason, Handle}
             end;
         {error, Reason} ->
-            true = setopts(H, Options),
             {error, Reason, H}
     end.
 
