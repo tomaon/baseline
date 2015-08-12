@@ -119,21 +119,22 @@ version_test(_Config) ->
 
 get_key_test(_Config) ->
     X = [
-         { [baseline,applications], [kernel,stdlib,crypto] },
+         { [baseline,applications], [crypto,kernel,stdlib] },
          { [baseline,env],          [{environment,src},{included_applications,[]}] },
          { [baseline,undefined],    undefined }
         ],
-    [ E = test(get_key,A) || {A,E} <- X ].
+    [ E = test(get_key,A,true) || {A,E} <- X ].
 
 
 lib_dir_test(_Config) ->
     X = [
          { [kernel],    filename:join([code:lib_dir(kernel,priv),lib]) },
          { [stdlib],    filename:join([code:lib_dir(stdlib,priv),lib]) },
-         { [crypto],    filename:join([code:lib_dir(crypto,priv),lib]) }
-         %%{ [baseline],  filename:join([baseline_ct:base_dir(),priv,lib]) }, TODO: rebar3
-         %%{ [undefined], filename:join([baseline_ct:base_dir(0),priv,lib]) }
+         { [crypto],    filename:join([code:lib_dir(crypto,priv),lib]) },
+         { [baseline],  filename:join([baseline_ct:base_dir(),lib,baseline,priv,lib]) },
+         { [undefined], filename:join([baseline_ct:base_dir(0),priv,lib]) } % ?
         ],
+    ct:log(baseline_ct:base_dir()),
     [ E = test(lib_dir,A) || {A,E} <- X ].
 
 
@@ -159,3 +160,11 @@ ensure_start_test(_Config) -> % MUST be the last
 
 test(Function, Args) ->
     baseline_ct:test(baseline_app, Function, Args).
+
+test(Function, Args, true) ->
+    case test(Function, Args) of
+        Term when is_list(Term) ->
+            lists:sort(Term);
+        Term ->
+            Term
+    end.

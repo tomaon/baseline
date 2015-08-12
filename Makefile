@@ -38,7 +38,7 @@ rm-logs:
 
 #
 n%: compile
-	@$(ENV) $(REBAR) as test shell $(call OPT,$@) --help
+	@$(ENV) $(REBAR) as test shell $(call OPT,$@)
 
 x%: compile
 	@$(ENV) ERL_LIBS=.rebar3/test/lib escript priv/escript/$@.escript

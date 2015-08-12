@@ -39,7 +39,7 @@ start_link(Args) ->
 start_link(SupName, Args) ->
     supervisor:start_link(SupName, ?MODULE, Args).
 
--spec stop(sup_ref()) -> stop_ret().
+-spec stop(sup_ref()) -> ok.
 stop(SupRef) ->
     stop(SupRef, children(SupRef)).
 
@@ -50,7 +50,7 @@ cast(SupRef, Term) ->
          [ {C,M} || {_,C,_,[M|_]} <- supervisor:which_children(SupRef), is_pid(C) ]).
 
 
--spec find(sup_ref(),term()) -> pid()|undefined.
+-spec find(sup_ref(),child_id()) -> child()|restarting.
 find(SupRef, Id) ->
     case [ C || {I,C,_,_} <- supervisor:which_children(SupRef), Id =:= I ] of
         [] ->
@@ -62,8 +62,8 @@ find(SupRef, Id) ->
 
 -spec children(sup_ref()) -> [pid()].
 children(SupRef) ->
-    F = fun ({_,C,_,_}, A) when is_pid(C) -> [C|A]; (_, A) -> A end,
-    lists:foldl(F, [], supervisor:which_children(SupRef)). % reverse
+    [ C || {_,C,_,_} <- supervisor:which_children(SupRef), is_pid(C) ].
+
 
 %% == behaviour: supervisor ==
 

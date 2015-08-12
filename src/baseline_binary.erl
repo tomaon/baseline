@@ -35,12 +35,12 @@ suffix(Binary1, Binary2)
   when is_binary(Binary1), is_binary(Binary2) ->
     suffix(Binary1, byte_size(Binary1), Binary2, byte_size(Binary2)).
 
--spec binary_to_word(binary(),pos_integer(),atom()) -> integer().
+-spec binary_to_word(binary(),pos_integer(),endianness()) -> non_neg_integer().
 binary_to_word(Binary, Pos, Endianness)
   when is_binary(Binary), ?IS_POS_INTEGER(Pos), ?IS_ENDIANNESS(Endianness) ->
     binary_to_word(Binary, Pos, 4, Endianness).
 
--spec binary_to_word(binary(),pos_integer(),integer(),atom()) -> integer().
+-spec binary_to_word(binary(),pos_integer(),integer(),endianness()) -> non_neg_integer().
 binary_to_word(Binary, Start, Length, little)
   when is_binary(Binary), ?IS_POS_INTEGER(Start), is_integer(Length) ->
     <<W:32/little>> = binary_part(Binary, Start, Length),

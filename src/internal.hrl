@@ -5,11 +5,16 @@
 
 %% == type ==
 
+%% -- file --
 -type filename() :: file:filename().
+
+%% -- proplists --
 -type property() :: proplists:property().
--type startchild_ret() :: {ok,pid()}|{ok,pid(),term()}|{error,_}.
--type startlink_ret() :: {ok,pid()}|ignore|{error,_}.
--type stop_ret() :: ok.
--type sup_name() :: {local,atom()}|{global,atom()}.
--type sup_ref() :: atom()|{atom(),node()}|{global,atom()}|pid().
--type terminatechild_ret() :: ok|{error,_}.
+
+%% -- supervisor --
+-type child() :: undefined| pid().
+-type child_id() :: term().
+-type startlink_err() :: term().
+-type startlink_ret() :: supervisor:startchild_ret().
+-type sup_name() :: {local,atom()}|{global,atom()}|{via,module(),any()}.
+-type sup_ref() :: atom()|{atom(),node()}|{global,atom()}|{via,module(),any()}|pid().
