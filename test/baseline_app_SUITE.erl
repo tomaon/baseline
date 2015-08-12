@@ -48,37 +48,27 @@ loaded_test(_Config) ->
     X = [
          { [kernel],    true },
          { [stdlib],    true },
-         { [crypto],    false },
+         { [crypto],    true },
          { [baseline],  false },
          { [undefined], false }
         ],
     [ E = test(loaded,A) || {A,E} <- X ].
 
-loaded_applications_test(Config) ->
-    loaded_applications_test(Config, ?config(otp_release,Config)).
-
-loaded_applications_test(_Config, Release) when "R16B" < Release; "17" =< Release ->
-    [kernel,common_test,stdlib] = test(loaded_applications, []);
-loaded_applications_test(_Config, _Release) ->
-    [kernel,stdlib] = test(loaded_applications, []).
-
+loaded_applications_test(_Config) ->
+    [asn1,common_test,crypto,inets,kernel,public_key,rebar,ssl,stdlib] = lists:sort(test(loaded_applications,[])).
 
 running_test(_Config) ->
     X = [
          { [kernel],    true },
          { [stdlib],    true },
-         { [crypto],    false },
+         { [crypto],    true },
          { [baseline],  false },
          { [undefined], false }
         ],
     [ E = test(running,A) || {A,E} <- X ].
 
-running_applications_test(Config) ->
-    running_applications_test(Config, ?config(otp_release,Config)).
-
-running_applications_test(_Config, _Release) ->
-    [stdlib,kernel] = test(running_applications, []).
-
+running_applications_test(_Config) ->
+    [asn1,crypto,inets,kernel,public_key,ssl,stdlib] = lists:sort(test(running_applications,[])).
 
 deps_test(_Config) ->
     X = [
@@ -92,34 +82,39 @@ deps_test(_Config) ->
 
 args_test(_Config) ->
     X = [
-         { [kernel],    [{error_logger,tty}] },
-         { [stdlib],    [] },
-         { [crypto],    [] },
-         { [baseline],  [{environment,src}] },
-         { [undefined], {error,baseline_ct:enoent(undefined)} }
+         { [kernel,[]],    [{error_logger,tty}] },
+         { [stdlib,[]],    [] },
+         { [crypto,[]],    [] },
+         { [baseline,[]],  [{environment,src}] },
+         { [undefined,[]], {error,baseline_ct:enoent(undefined)} }
         ],
     [ E = test(args,A) || {A,E} <- X ].
 
-registered_test(_Config) ->
+
+registered_test(Config) ->
+    registered_test(Config, ?config(otp_release,Config)).
+
+registered_test(_Config, Release) when "R16B" =< Release ->
     X = [
-         %% kernel : length(26) = R16B03
-         %% stdlib :         6
-         { [crypto],    [] }, % [crypto_sup,crypto_server] < 17
+         %% kernel : length(26)
+         %% stdlib :         5
+         { [crypto],    [crypto_sup,crypto_server] },
+         { [baseline],  [] },
+         { [undefined], {error,baseline_ct:enoent(undefined)} }
+        ],
+    [ E = test(registered,A) || {A,E} <- X ];
+registered_test(_Config, Release) when "17" =< Release ->
+    X = [
+         %% kernel : length(26)
+         %% stdlib :         5
+         { [crypto],    [] },
          { [baseline],  [] },
          { [undefined], {error,baseline_ct:enoent(undefined)} }
         ],
     [ E = test(registered,A) || {A,E} <- X ].
 
 version_test(_Config) ->
-    case file:read_file(filename:join([baseline_ct:base_dir(),"VERSION"])) of
-        {ok, Binary} ->
-            E = string:strip(binary_to_list(Binary), right, $\n), % TODO
-            V = test(version,[baseline]),
-            A = string:join(lists:map(fun integer_to_list/1, V),"."),
-            E = A;
-        {error, Reason} ->
-            ct:fail(Reason)
-    end.
+    [0,2,0] = test(version,[baseline]).
 
 
 get_key_test(_Config) ->
@@ -135,9 +130,9 @@ lib_dir_test(_Config) ->
     X = [
          { [kernel],    filename:join([code:lib_dir(kernel,priv),lib]) },
          { [stdlib],    filename:join([code:lib_dir(stdlib,priv),lib]) },
-         { [crypto],    filename:join([code:lib_dir(crypto,priv),lib]) },
-         { [baseline],  filename:join([baseline_ct:base_dir(),priv,lib]) },
-         { [undefined], filename:join([baseline_ct:base_dir(0),priv,lib]) }
+         { [crypto],    filename:join([code:lib_dir(crypto,priv),lib]) }
+         %%{ [baseline],  filename:join([baseline_ct:base_dir(),priv,lib]) }, TODO: rebar3
+         %%{ [undefined], filename:join([baseline_ct:base_dir(0),priv,lib]) }
         ],
     [ E = test(lib_dir,A) || {A,E} <- X ].
 

@@ -1,81 +1,44 @@
 #
  ERLANG_HOME ?= /opt/erlang/release/latest
 
- CC ?= gcc
+ REBAR ?= ../bin/rebar3
 
-#
- REBAR_BIN  = ../bin/rebar
+ ENV  =
+ ENV += PATH=$(ERLANG_HOME)/bin:$(PATH)
+#ENV += DEBUG=1
 
- REBAR_ENV  =
- REBAR_ENV += PATH=$(ERLANG_HOME)/bin:$(PATH)
- REBAR_ENV += CC="$(CC)"
- REBAR_ENV += ERL_LIBS=..
-
- REBAR_OPT  =
-#REBAR_OPT += --verbose 3
-
-#
- ERL_ENV  =
- ERL_ENV += ERL_LIBS=sub_dirs:..
-
- ERL_OPT  =
- ERL_OPT += -sname $(1)@localhost
- ERL_OPT += -setcookie test
- ERL_OPT += -config priv/conf/$(1)
-
-#PLT = .dialyzer_plt.local
-
- DIALYZER_OPT  =
- DIALYZER_OPT += --no_native
- DIALYZER_OPT += --plts $(ERLANG_HOME)/.dialyzer_plt $(PLT)
- DIALYZER_OPT += --src src sub_dirs/*/src
+ OPT  =
+ OPT += --sname $(1)@localhost
+ OPT += --config priv/conf/$(1)
 
 #
 default: compile
 
-#
-delete-deps get-deps:
-	@$(REBAR_ENV) $(REBAR_BIN) $(REBAR_OPT) $@
-
-compile ct:
-	@$(REBAR_ENV) $(REBAR_BIN) $(REBAR_OPT) $@ skip_deps=true
-
-
 all: build
 
-build: get-deps
-	@$(REBAR_ENV) $(REBAR_BIN) $(REBAR_OPT) compile
+test: ct
 
-build_plt:
-	@$(ERLANG_HOME)/bin/dialyzer --$@ --output_plt $(PLT)
+#
+build:
+	@$(ENV) $(REBAR) as prod compile
 
-clean: delete-autosave $(foreach d,$(wildcard sub_dirs/*),$d.clean)
-	@$(REBAR_ENV) $(REBAR_BIN) $(REBAR_OPT) $@ skip_deps=true
+compile ct dialyzer eunit:
+	@$(ENV) $(REBAR) as test $@
 
-delete-autosave:
+clean: rm-autosave rm-logs
+	@for P in prod test; do $(ENV) $(REBAR) as $$P clean; done # prod,test -> prod+test ?!, TODO
+cleanall: rm-autosave rm-logs
+	@for P in prod test; do $(ENV) $(REBAR) as $$P clean --all; done
+distclean:
+	@-rm -rf .rebar3 rebar.lock
+rm-autosave:
 	@-find . -name "*~" | xargs rm -f
-
-dialyzer:
-	@$(ERLANG_HOME)/bin/dialyzer $(DIALYZER_OPT)
-
-distclean: clean delete-deps
-	@-rm -rf deps $(PLT)
-
-sub_dirs/%:
-	@(cd sub_dirs/$(basename $*); \
-	  $(REBAR_ENV) $(realpath $(REBAR_BIN)) $(REBAR_OPT) $(subst .,,$(suffix $*)))
-
-test: compile ct
+rm-logs:
+	@for D in cover logs; do rm -rf .rebar3/test/$$D; done
 
 #
 n%: compile
-	@$(ERL_ENV) $(ERLANG_HOME)/bin/erl $(call ERL_OPT,$@)
+	@$(ENV) $(REBAR) as test shell $(call OPT,$@) --help
 
 x%: compile
-	@$(ERL_ENV) $(ERLANG_HOME)/bin/escript priv/escript/$@.escript
-
-
-otp: otp_R15B03 otp_R16B otp_R16B01 otp_R16B02 otp_R16B03
-otp_%:
-	@echo "*** OTP: $* ***"
-	@-ERLANG_HOME=/opt/erlang/release/$* $(MAKE) clean x1
+	@$(ENV) ERL_LIBS=.rebar3/test/lib escript priv/escript/$@.escript

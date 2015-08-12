@@ -2,9 +2,9 @@
 {application, baseline,
  [
   {description, ""},
-  {vsn, {cmd, "cat VERSION"}},
+  {vsn, "0.2.0"},
   {applications, [kernel,stdlib,crypto]},
   {env, [
-         {environment, src} % use-ct 
+         {environment, src} % use-ct
         ]}
  ]}.

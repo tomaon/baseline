@@ -23,7 +23,7 @@
 -export([ensure_start/1, ensure_start/2]).
 -export([loaded/1, loaded_applications/0]).
 -export([running/1, running_applications/0]).
--export([deps/1, args/1, args/2, registered/1, version/1]).
+-export([deps/1, args/2, registered/1, version/1]).
 -export([get_key/2, get_key/3]).
 -export([lib_dir/1, lib_dir/2]).
 
@@ -93,9 +93,9 @@ deps(Application)
         end,
     ensure_call(F, Application).
 
--spec args(atom()) -> [property()].
-args(Application) ->
-    args(Application, []).
+args(List) ->
+    {ok, Application} = application:get_application(),
+    args(Application, List).
 
 -spec args(atom(),[property()]) -> [property()].
 args(Application, List) ->

@@ -11,4 +11,4 @@
 
 -define(IS_POS_INTEGER(T), (is_integer(T) andalso (0 =< T))).
 
--define(IS_TIMEOUT(T), (infinity =:= T orelse (is_integer(T) andalso (0 < T)))).
+-define(IS_TIMEOUT(T), (infinity =:= T orelse (is_integer(T) andalso (0 =< T)))).
