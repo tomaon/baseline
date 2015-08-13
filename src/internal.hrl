@@ -17,4 +17,4 @@
 -type startlink_err() :: term().
 -type startlink_ret() :: supervisor:startchild_ret().
 -type sup_name() :: {local,atom()}|{global,atom()}|{via,module(),any()}.
--type sup_ref() :: atom()|{atom(),node()}|{global,atom()}|{via,module(),any()}|pid().
+-type sup_ref() :: atom()|pid().

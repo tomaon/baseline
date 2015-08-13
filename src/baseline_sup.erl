@@ -81,7 +81,7 @@ cast(SupRef, Term, List, [{C,M}|T]) ->
 stop(SupRef, []) when is_pid(SupRef) ->
     true = exit(SupRef, normal),
     ok;
-stop(SupRef, []) when is_atom(SupRef) -> % TODO, {atom(),node()}, {global,atom()}
+stop(SupRef, []) when is_atom(SupRef) -> % TODO, {atom(),node()}, {global,atom()}, {via,module(),any()}
     stop(whereis(SupRef), []);
 stop(SupRef, [H|T]) ->
     _ = supervisor:terminate_child(SupRef, H),
