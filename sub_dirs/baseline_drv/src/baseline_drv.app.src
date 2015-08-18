@@ -2,7 +2,7 @@
 {application, baseline_drv,
  [
   {description, ""},
-  {vsn, {cmd, "cat ../../VERSION"}},
+  {vsn, "sample"},
   {registered, [baseline_drv_sup]},
   {applications, [kernel,stdlib]},
   {env, [

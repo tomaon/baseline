@@ -2,7 +2,7 @@
 {application, baseline_nif,
  [
   {description, ""},
-  {vsn, {cmd, "cat ../../VERSION"}},
+  {vsn, "sample"},
   {registered, []},
   {applications, [kernel,stdlib]},
   {env, [
