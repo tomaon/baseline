@@ -21,7 +21,6 @@
 
 %% -- public --
 -export([base_dir/0, base_dir/1]).
--export([enoent/1]).
 -export([test/3, test_parallel/3, test_sequential/3]).
 -export([loop/3]).
 -export([set_env/1]).
@@ -42,12 +41,6 @@ base_dir(N)
         {error, Reason} ->
             ct:fail(Reason)
     end.
-
-
--spec enoent(atom()) -> {string(),string()}.
-enoent(App)
-  when is_atom(App) ->
-    {"no such file or directory", atom_to_list(App) ++ ".app"}.
 
 
 -spec test(atom(),atom(),[term()]) -> term().

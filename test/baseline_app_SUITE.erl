@@ -76,7 +76,7 @@ deps_test(_Config) ->
          { [stdlib],    [kernel] },
          { [crypto],    [kernel,stdlib] },
          { [baseline],  [kernel,stdlib,crypto] },
-         { [undefined], {error,baseline_ct:enoent(undefined)} }
+         { [undefined], {error,enoent(undefined)} }
         ],
     [ E = test(deps,A) || {A,E} <- X ].
 
@@ -86,7 +86,7 @@ args_test(_Config) ->
          { [stdlib,[]],    [] },
          { [crypto,[]],    [] },
          { [baseline,[]],  [{environment,src}] },
-         { [undefined,[]], {error,baseline_ct:enoent(undefined)} }
+         { [undefined,[]], {error,enoent(undefined)} }
         ],
     [ E = test(args,A) || {A,E} <- X ].
 
@@ -100,7 +100,7 @@ registered_test(_Config, Release) when "R16B" =< Release ->
          %% stdlib :         5
          { [crypto],    [crypto_sup,crypto_server] },
          { [baseline],  [] },
-         { [undefined], {error,baseline_ct:enoent(undefined)} }
+         { [undefined], {error,enoent(undefined)} }
         ],
     [ E = test(registered,A) || {A,E} <- X ];
 registered_test(_Config, Release) when "17" =< Release ->
@@ -109,7 +109,7 @@ registered_test(_Config, Release) when "17" =< Release ->
          %% stdlib :         5
          { [crypto],    [] },
          { [baseline],  [] },
-         { [undefined], {error,baseline_ct:enoent(undefined)} }
+         { [undefined], {error,enoent(undefined)} }
         ],
     [ E = test(registered,A) || {A,E} <- X ].
 
@@ -144,7 +144,7 @@ ensure_start_test(_Config) -> % MUST be the last
          { [stdlib],    ok },
          { [crypto],    ok },
          { [baseline],  ok },
-         { [undefined], {error,baseline_ct:enoent(undefined)} }
+         { [undefined], {error,enoent(undefined)} }
         ],
     F = fun (A) ->
                 case test(ensure_start, A) of
@@ -157,6 +157,9 @@ ensure_start_test(_Config) -> % MUST be the last
     [ E = F(A) || {A,E} <- X ].
 
 %% == private ==
+
+enoent(App) ->
+    {"no such file or directory", atom_to_list(App) ++ ".app"}.
 
 test(Function, Args) ->
     baseline_ct:test(baseline_app, Function, Args).
