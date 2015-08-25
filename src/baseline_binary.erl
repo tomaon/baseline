@@ -36,7 +36,7 @@ suffix(Binary1, Binary2)
     suffix(Binary1, byte_size(Binary1), Binary2, byte_size(Binary2)).
 
 
--spec binary_to_word(binary(),non_neg_integer(),endianness()) -> integer().
+-spec binary_to_word(binary(),non_neg_integer(),endianness()) -> non_neg_integer().
 binary_to_word(Binary, Start, Endianness)
   when is_binary(Binary), ?IS_NON_NEG_INTEGER(Start), ?IS_ENDIANNESS(Endianness) ->
     binary_to_word(Binary, Start, 4, Endianness).
