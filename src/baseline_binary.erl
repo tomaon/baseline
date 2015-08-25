@@ -21,7 +21,7 @@
 
 %% -- public --
 -export([prefix/2, suffix/2]).
--export([binary_to_word/3, binary_to_word/4]).
+-export([binary_to_word/3]).
 
 %% == public ==
 
@@ -35,27 +35,26 @@ suffix(Binary1, Binary2)
   when is_binary(Binary1), is_binary(Binary2) ->
     suffix(Binary1, byte_size(Binary1), Binary2, byte_size(Binary2)).
 
--spec binary_to_word(binary(),pos_integer(),endianness()) -> non_neg_integer().
-binary_to_word(Binary, Pos, Endianness)
-  when is_binary(Binary), ?IS_POS_INTEGER(Pos), ?IS_ENDIANNESS(Endianness) ->
-    binary_to_word(Binary, Pos, 4, Endianness).
 
--spec binary_to_word(binary(),pos_integer(),integer(),endianness()) -> non_neg_integer().
-binary_to_word(Binary, Start, Length, little)
-  when is_binary(Binary), ?IS_POS_INTEGER(Start), is_integer(Length) ->
-    <<W:32/little>> = binary_part(Binary, Start, Length),
-    W;
-binary_to_word(Binary, Start, Length, big)
-  when is_binary(Binary), ?IS_POS_INTEGER(Start), is_integer(Length) ->
-    <<W:32/big>> = binary_part(Binary, Start, Length),
-    W.
+-spec binary_to_word(binary(),non_neg_integer(),endianness()) -> integer().
+binary_to_word(Binary, Start, Endianness)
+  when is_binary(Binary), ?IS_NON_NEG_INTEGER(Start), ?IS_ENDIANNESS(Endianness) ->
+    binary_to_word(Binary, Start, 4, Endianness).
 
 %% == internal ==
 
 prefix(Binary1, Size1, Binary2, Size2) ->
-    Size1> 0 andalso Size2 > 0
-        andalso Size1 >= Size2 andalso Binary2 =:= binary:part(Binary1, {0,Size2}).
+    Size1 > 0 andalso Size2 > 0
+        andalso Size1 >= Size2 andalso Binary2 =:= binary_part(Binary1, {0,Size2}).
 
 suffix(Binary1, Size1, Binary2, Size2) ->
-    Size1> 0 andalso Size2 > 0
-        andalso Size1 >= Size2 andalso Binary2 =:= binary:part(Binary1, {Size1,-Size2}).
+    Size1 > 0 andalso Size2 > 0
+        andalso Size1 >= Size2 andalso Binary2 =:= binary_part(Binary1, {Size1,-Size2}).
+
+
+binary_to_word(Binary, Start, Length, little) ->
+    <<W:Length/integer-unsigned-little-unit:8>> = binary_part(Binary, {Start,Length}),
+    W;
+binary_to_word(Binary, Start, Length, big) ->
+    <<W:Length/integer-unsigned-big-unit:8>> = binary_part(Binary, {Start,Length}),
+    W.
