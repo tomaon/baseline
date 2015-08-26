@@ -28,7 +28,7 @@
 -export([init/1, terminate/2, code_change/3,
          handle_call/3, handle_cast/2, handle_info/2]).
 
-%% -- private --
+%% -- internal --
 -record(state, {
           id :: integer()
          }).
@@ -108,7 +108,7 @@ handle_info(_Info, State) ->
     io:format("~p [~p:handle_info] info=~p~n", [self(),?MODULE,_Info]),
     {noreply, State}.
 
-%% == private: state ==
+%% == intarnal ==
 
 cleanup(#state{}) ->
     baseline:flush().

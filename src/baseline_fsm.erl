@@ -30,7 +30,7 @@
 
 -export([loaded/3, ready/2, ready/3]).
 
-%% -- private --
+%% -- internal --
 -record(state, {
           id :: integer()
          }).
@@ -122,7 +122,7 @@ ready(_Event, _From, StateData) ->
     io:format("~p [~p:ready] event=~p~n",[self(),?MODULE,_Event]),
     {reply, ok, ready, StateData}.
 
-%% == private: state ==
+%% == internal ==
 
 cleanup(#state{}) ->
     baseline:flush().

@@ -32,7 +32,7 @@
 -export([start/2, prep_stop/1, stop/1]).
 -export([start_phase/5]).
 
-%% -- private --
+%% -- internal --
 -record(state, {
           sup :: pid()
          }).
@@ -98,7 +98,8 @@ args(List) ->
     args(Application, List).
 
 -spec args(atom(),proplists:proplist()) -> proplists:proplist().
-args(Application, List) ->
+args(Application, List)
+  when is_atom(Application), is_list(List) ->
     case env(Application) of
         {error, Reason} ->
             {error, Reason};
@@ -188,7 +189,7 @@ start_phase(Application, Phase, StartType, PhaseArgs, Fun)
             {error, Reason}
     end.
 
-%% == private: state ==
+%% == internal ==
 
 cleanup(#state{sup=P}=S)
   when undefined =/= P ->
@@ -237,7 +238,6 @@ setup_child(Term, SupRef) ->
             throw(Reason)
     end.
 
-%% == private ==
 
 ensure_call(Fun, Application) ->
     ensure_call(Fun, Application, loaded(Application)).
@@ -251,6 +251,7 @@ ensure_call(Fun, Application, false) ->
         {error, Reason} ->
             {error, Reason}
     end.
+
 
 env(Application)
   when is_atom(Application) ->

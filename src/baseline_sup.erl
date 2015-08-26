@@ -77,7 +77,7 @@ children(SupRef) ->
 init(Args) ->
     {ok, Args}.
 
-%% == private ==
+%% == intenal ==
 
 cast(_SupRef, _Term, List, []) ->
     List;
