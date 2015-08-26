@@ -97,7 +97,7 @@ args(List) ->
     {ok, Application} = application:get_application(),
     args(Application, List).
 
--spec args(atom(),[property()]) -> [property()].
+-spec args(atom(),proplists:proplist()) -> proplists:proplist().
 args(Application, List) ->
     case env(Application) of
         {error, Reason} ->
@@ -140,12 +140,12 @@ get_key(Application, Key, DefaultVal)
     end.
 
 
--spec lib_dir(atom()) -> filename().
+-spec lib_dir(atom()) -> file:filename().
 lib_dir(Application)
   when is_atom(Application) ->
     filename:join(lib_dir(Application,priv), "lib").
 
--spec lib_dir(atom(),atom()) -> filename().
+-spec lib_dir(atom(),atom()) -> file:filename().
 lib_dir(Application, SubDir)
   when is_atom(Application), is_atom(SubDir)->
     case code:lib_dir(Application, SubDir) of

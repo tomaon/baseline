@@ -27,11 +27,11 @@
 
 %% == public ==
 
--spec base_dir() -> filename().
+-spec base_dir() -> file:filename().
 base_dir() ->
     base_dir(2).
 
--spec base_dir(non_neg_integer()) -> filename().
+-spec base_dir(non_neg_integer()) -> file:filename().
 base_dir(N)
   when is_integer(N), 0 =< N ->
     case file:get_cwd() of % ~/.ct/ct_run.test@HOST.YYYY-MM-DD_hh.mm.ss
@@ -76,7 +76,7 @@ loop(Type, Config, List)
     end.
 
 
--spec set_env([property()]) -> ok.
+-spec set_env(proplists:proplist()) -> ok.
 set_env([]) ->
     ok;
 set_env([{A,L}|T]) ->

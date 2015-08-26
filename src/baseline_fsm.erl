@@ -37,12 +37,12 @@
 
 %% == public ==
 
--spec start_link([property()]) -> {ok,pid()}|{error,_}.
+-spec start_link(proplists:proplist()) -> {ok,pid()}|{error,_}.
 start_link(Args)
   when is_list(Args) ->
     start_link(Args, 0).
 
--spec start_link([property()],integer()) -> {ok,pid()}|{error,_}.
+-spec start_link(proplists:proplist(),integer()) -> {ok,pid()}|{error,_}.
 start_link(Args, Id)
   when is_list(Args), is_integer(Id) ->
     case gen_fsm:start_link(?MODULE, [Id], []) of

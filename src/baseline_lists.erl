@@ -59,7 +59,7 @@ equalize(Num, Sum, Div, Rem, List) ->
     equalize(Num - 1, E, Div, Rem - 1, [E|List]).
 
 
--spec except([property()],[property()]) -> [property()].
+-spec except(proplists:proplist(),proplists:proplist()) -> proplists:proplist().
 except(List1, List2)
   when is_list(List1), is_list(List2) ->
     F = fun (E) ->
@@ -71,7 +71,7 @@ except(List1, List2)
     lists:filter(F, List1).
 
 
--spec merge([property()],[property()]) -> [property()].
+-spec merge(proplists:proplist(),proplists:proplist()) -> proplists:proplist().
 merge(List1, List2)
   when is_list(List1), is_list(List2) ->
     lists:sort(List1 ++ baseline_lists:except(List2, List1)).
