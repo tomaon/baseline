@@ -21,7 +21,7 @@
 
 %% -- public --
 -export([prefix/2, suffix/2]).
--export([binary_to_word/3]).
+-export([binary_to_word/3, binary_to_unsigned/4]).
 
 %% == public ==
 
@@ -39,7 +39,15 @@ suffix(Binary1, Binary2)
 -spec binary_to_word(binary(),non_neg_integer(),endianness()) -> non_neg_integer().
 binary_to_word(Binary, Start, Endianness)
   when is_binary(Binary), ?IS_NON_NEG_INTEGER(Start), ?IS_ENDIANNESS(Endianness) ->
-    binary_to_word(Binary, Start, 4, Endianness).
+    binary_to_unsigned(Binary, Start, 4, Endianness).
+
+-spec binary_to_unsigned(binary(),non_neg_integer(),non_neg_integer(),endianness()) -> non_neg_integer().
+binary_to_unsigned(Binary, Start, Length, little) ->
+    <<W:Length/integer-unsigned-little-unit:8>> = binary_part(Binary, {Start,Length}),
+    W;
+binary_to_unsigned(Binary, Start, Length, big) ->
+    <<W:Length/integer-unsigned-big-unit:8>> = binary_part(Binary, {Start,Length}),
+    W.
 
 %% == internal ==
 
@@ -50,11 +58,3 @@ prefix(Binary1, Size1, Binary2, Size2) ->
 suffix(Binary1, Size1, Binary2, Size2) ->
     Size1 > 0 andalso Size2 > 0
         andalso Size1 >= Size2 andalso Binary2 =:= binary_part(Binary1, {Size1,-Size2}).
-
-
-binary_to_word(Binary, Start, Length, little) ->
-    <<W:Length/integer-unsigned-little-unit:8>> = binary_part(Binary, {Start,Length}),
-    W;
-binary_to_word(Binary, Start, Length, big) ->
-    <<W:Length/integer-unsigned-big-unit:8>> = binary_part(Binary, {Start,Length}),
-    W.
