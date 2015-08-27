@@ -10,13 +10,13 @@
 
 %% -- pubic --
 -export([prefix_test/1, suffix_test/1]).
--export([binary_to_word_test/1, word_to_binary_test/1]).
+-export([binary_to_words_test/1, binary_to_word_test/1, words_to_binary_test/1, word_to_binary_test/1]).
 
 %% == callback: ct ==
 
 all() -> [
           prefix_test, suffix_test,
-          binary_to_word_test, word_to_binary_test
+          binary_to_words_test, binary_to_word_test, words_to_binary_test, word_to_binary_test
          ].
 
 %% == public ==
@@ -44,6 +44,15 @@ suffix_test(_Config) ->
     [ E = test(suffix,A) || {A,E} <- X ].
 
 
+binary_to_words_test(_Config) ->
+    X = [
+         { [<<1,2,3,4,5,6,7,8>>,0,little],   [67305985,134678021] },
+         { [<<1,2,3,4,5,6,7,8>>,0,big],      [16909060, 84281096] },
+         { [<<1,2,3,4,5,6,7,8>>,4,4,little], [134678021] },
+         { [<<1,2,3,4,5,6,7,8>>,4,4,big],    [ 84281096] }
+        ],
+    [ E = test(binary_to_words,A) || {A,E} <- X ].
+
 binary_to_word_test(_Config) ->
     X = [
          { [<<1,2,3,4,5,6,7,8>>,0,little],  67305985 },
@@ -52,6 +61,15 @@ binary_to_word_test(_Config) ->
          { [<<1,2,3,4,5,6,7,8>>,4,big],     84281096 }
         ],
     [ E = test(binary_to_word,A) || {A,E} <- X ].
+
+words_to_binary_test(_Config) ->
+    X = [
+         { [[67305985,134678021],little], <<1,2,3,4,5,6,7,8>> },
+         { [[16909060,84281096],big],     <<1,2,3,4,5,6,7,8>> },
+         { [[134678021],little],          <<5,6,7,8>> },
+         { [[84281096],big],              <<5,6,7,8>> }
+        ],
+    [ E = test(words_to_binary,A) || {A,E} <- X ].
 
 word_to_binary_test(_Config) ->
     X = [
