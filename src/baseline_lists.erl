@@ -25,7 +25,9 @@
 -export([except/2]).
 -export([merge/2]).
 -export([combine/2, combine/3]).
--export([get_as_binary/4, get_as_integer/4, get_as_list/4]).
+-export([get_as_binary/4,
+         get_as_integer/4, get_as_integer/5, get_as_integer/6,
+         get_as_list/4]).
 
 %% == public ==
 
@@ -114,6 +116,15 @@ get_as_integer(Key, N, List, DefaultValue) ->
         {Key, Term} when is_list(Term) -> list_to_integer(Term);
         false -> DefaultValue
     end.
+
+-spec get_as_integer(term(),pos_integer(),[tuple()],integer(),integer()) -> integer().
+get_as_integer(Key, N, List, DefaultValue, Max) ->
+    min(get_as_integer(Key,N,List,DefaultValue), Max).
+
+-spec get_as_integer(term(),pos_integer(),[tuple()],integer(),integer(),integer()) -> integer().
+get_as_integer(Key, N, List, DefaultValue, Max, Min)
+  when Max >= Min ->
+    min(max(get_as_integer(Key,N,List,DefaultValue),Min), Max).
 
 -spec get_as_list(term(),pos_integer(),[tuple()],list()) -> list().
 get_as_list(Key, N, List, DefaultValue) ->
