@@ -32,8 +32,7 @@
 %% == public ==
 
 -spec choose([term()]) -> term()|undefined.
-choose(List)
-  when is_list(List) ->
+choose(List) ->
     choose(List, 2).
 
 -spec choose([term()], integer()) -> term()|undefined.
@@ -44,12 +43,10 @@ choose(List, Size)
     lists:nth(1 + binary:decode_unsigned(crypto:rand_bytes(Size)) rem length(List), List).
 
 
--spec equalize(pos_integer(),pos_integer()) -> [pos_integer()]|{error,_}.
+-spec equalize(pos_integer(),pos_integer()) -> [pos_integer()].
 equalize(N, W)
-  when is_integer(N), N > 0, is_integer(W), W > 0 ->
-    equalize(min(N,W), 0, N div W, N rem W, []);
-equalize(_N, _W) ->
-    {error, badarg}.
+  when ?IS_POS_INTEGER(N), ?IS_POS_INTEGER(W) ->
+    equalize(min(N,W), 0, N div W, N rem W, []).
 
 equalize(0, _Sum, _Div, _Rem, List) ->
     lists:reverse(List);
@@ -84,7 +81,8 @@ combine(N, List1, List2) ->
     combine(N, List1, List2, []).
 
 -spec combine(pos_integer(),[tuple()],[tuple()],[term()]) -> [tuple()].
-combine(N, List1, List2, Excludes) ->
+combine(N, List1, List2, Excludes)
+  when ?IS_POS_INTEGER(N), is_list(List1), is_list(List2), is_list(Excludes) ->
     lists:filtermap(fun ({K,V}) ->
                             case lists:keyfind(K, N, List2) of
                                 {K, A} ->
@@ -101,7 +99,8 @@ combine(N, List1, List2, Excludes) ->
 
 
 -spec get_as_binary(term(),pos_integer(),[tuple()],binary()) -> binary().
-get_as_binary(Key, N, List, DefaultValue) ->
+get_as_binary(Key, N, List, DefaultValue)
+  when ?IS_POS_INTEGER(N), is_list(List), is_binary(DefaultValue) ->
     case lists:keyfind(Key, N, List) of
         {Key, Term} when is_binary(Term) -> Term;
         {Key, Term} when is_integer(Term) -> integer_to_binary(Term);
@@ -110,7 +109,8 @@ get_as_binary(Key, N, List, DefaultValue) ->
     end.
 
 -spec get_as_integer(term(),pos_integer(),[tuple()],integer()) -> integer().
-get_as_integer(Key, N, List, DefaultValue) ->
+get_as_integer(Key, N, List, DefaultValue)
+  when ?IS_POS_INTEGER(N), is_list(List), is_integer(DefaultValue) ->
     case lists:keyfind(Key, N, List) of
         {Key, Term} when is_integer(Term) -> Term;
         {Key, Term} when is_binary(Term) -> binary_to_integer(Term);
@@ -119,16 +119,18 @@ get_as_integer(Key, N, List, DefaultValue) ->
     end.
 
 -spec get_as_integer(term(),pos_integer(),[tuple()],integer(),integer()) -> integer().
-get_as_integer(Key, N, List, DefaultValue, Max) ->
+get_as_integer(Key, N, List, DefaultValue, Max)
+  when ?IS_POS_INTEGER(N), is_list(List), is_integer(DefaultValue), is_integer(Max) ->
     min(get_as_integer(Key,N,List,DefaultValue), Max).
 
 -spec get_as_integer(term(),pos_integer(),[tuple()],integer(),integer(),integer()) -> integer().
 get_as_integer(Key, N, List, DefaultValue, Max, Min)
-  when Max >= Min ->
+  when ?IS_POS_INTEGER(N), is_list(List), is_integer(DefaultValue), is_integer(Max), is_integer(Min), Max >= Min ->
     min(max(get_as_integer(Key,N,List,DefaultValue),Min), Max).
 
 -spec get_as_list(term(),pos_integer(),[tuple()],list()) -> list().
-get_as_list(Key, N, List, DefaultValue) ->
+get_as_list(Key, N, List, DefaultValue)
+  when ?IS_POS_INTEGER(N), is_list(List), is_list(DefaultValue) ->
     case lists:keyfind(Key, N, List) of
         {Key, Term} when is_list(Term) -> Term;
         {Key, Term} when is_binary(Term) -> binary_to_list(Term);
