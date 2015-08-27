@@ -222,9 +222,7 @@ setup({sup_child,Term}, #state{sup=P}=S)
     catch
         Reason ->
             throw({Reason,S})
-    end;
-setup(_Ignore, #state{}=S) ->
-    S.
+    end.
 
 setup_child(Term, SupRef) ->
     Spec = if is_tuple(Term), 6 =:= size(Term) -> Term;
