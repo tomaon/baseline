@@ -24,7 +24,7 @@
 -export([equalize/2]).
 -export([except/2]).
 -export([merge/2]).
--export([combine/2, combine/3]).
+-export([combine/3, combine/4]).
 -export([get_as_binary/4,
          get_as_integer/4, get_as_integer/5, get_as_integer/6,
          get_as_list/4]).
@@ -79,16 +79,16 @@ merge(List1, List2)
     lists:sort(List1 ++ baseline_lists:except(List2, List1)).
 
 
--spec combine([tuple()],[tuple()]) -> [tuple()].
-combine(List1, List2) ->
-    combine(List1, List2, []).
+-spec combine(pos_integer(),[tuple()],[tuple()]) -> [tuple()].
+combine(N, List1, List2) ->
+    combine(N, List1, List2, []).
 
--spec combine([tuple()],[tuple()],[term()]) -> [tuple()].
-combine(List1, List2, Excludes) ->
+-spec combine(pos_integer(),[tuple()],[tuple()],[term()]) -> [tuple()].
+combine(N, List1, List2, Excludes) ->
     lists:filtermap(fun ({K,V}) ->
-                            case lists:keyfind(K, 1, List2) of
-                                {K, N} ->
-                                    {true, {N,V}};
+                            case lists:keyfind(K, N, List2) of
+                                {K, A} ->
+                                    {true, {A,V}};
                                 false ->
                                     case lists:member(K, Excludes) of
                                         false ->
@@ -98,6 +98,7 @@ combine(List1, List2, Excludes) ->
                                     end
                             end
                     end, List1).
+
 
 -spec get_as_binary(term(),pos_integer(),[tuple()],binary()) -> binary().
 get_as_binary(Key, N, List, DefaultValue) ->

@@ -14,6 +14,7 @@
          equalize_test/1,
          except_test/1,
          merge_test/1,
+         combine_test/1,
          get_as_binary_test/1, get_as_integer_test/1, get_as_list_test/1
         ]).
 
@@ -24,6 +25,7 @@ all() -> [
           equalize_test,
           except_test,
           merge_test,
+          combine_test,
           get_as_binary_test, get_as_integer_test, get_as_list_test
          ].
 
@@ -87,6 +89,17 @@ merge_test(_Config) ->
          { [[a,b],[a,b]], [a,b] }
         ],
     [ E = test(merge,A) || {A,E} <- X ].
+
+
+combine_test(_Config) ->
+    X = [
+         { [1,[{a,1},{b,2}],[{b,d},{c,e}]], [{a,1},{d,2}] },
+         { [1,[{a,1},{b,2}],[{b,d},{c,e}],[a]], [{d,2}] },
+         { [1,[{a,1},{b,2}],[{b,d},{c,e}],[b]], [{a,1},{d,2}] },
+         { [1,[{a,1},{b,2}],[{b,d},{c,e}],[d]], [{a,1},{d,2}] }
+        ],
+    [ E = test(combine,A) || {A,E} <- X ].
+
 
 get_as_binary_test(_Config) ->
     L = [ {a,1}, {b,"2"}, {c,<<"3">>} ],
