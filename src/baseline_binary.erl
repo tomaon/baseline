@@ -68,7 +68,7 @@ words_to_binary(List, Endianness)
   when is_list(List), ?IS_ENDIANNESS(Endianness) ->
     words_to_binary(List, Endianness, []).
 
--spec word_to_binary(non_neg_integer(),endianness()) -> non_neg_integer().
+-spec word_to_binary(non_neg_integer(),endianness()) -> binary().
 word_to_binary(Unsigned, Endianness) ->
     unsigned_to_binary(Unsigned, ?WORD(1), Endianness).
 
