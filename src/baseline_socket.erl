@@ -27,22 +27,22 @@
 -export([call/4]).
 
 %% -- internal --
--record(handle,
+-record(socket,
         {
-          socket :: port(),                     % gen_tcp:socket()
-          buf    :: binary()
+          port       :: port(),                 % gen_tcp:socket()
+          buf = <<>> :: binary()
         }).
 
--type(handle() :: #handle{}).
+-type(socket() :: #socket{}).
 
 %% == private ==
 
 -spec connect(inet:ip_address()|inet:hostname(),inet:port_number(),
-              [gen_tcp:connect_option()],timeout()) -> {ok,handle()}|{error,_}.
+              [gen_tcp:connect_option()],timeout()) -> {ok,socket()}|{error,_}.
 connect(Address, Port, Options, Timeout) ->
     try gen_tcp:connect(Address, Port, Options, Timeout) of
         {ok, Socket} ->
-            {ok, #handle{socket = Socket, buf = <<>>}};
+            {ok, #socket{port = Socket}};
         {error, Reason} ->
             {error, Reason}
     catch
@@ -50,71 +50,71 @@ connect(Address, Port, Options, Timeout) ->
             {error, Reason}
     end.
 
--spec close(handle()) -> ok.
-close(#handle{socket=S}) ->
-    gen_tcp:close(S).
+-spec close(socket()) -> ok.
+close(#socket{port=P}) ->
+    gen_tcp:close(P).
 
 
--spec getopts(handle(),[gen_tcp:option_name()]) -> {ok,[gen_tcp:option()]}|{error,_}.
-getopts(#handle{socket=S}, Options) ->
-    inet:getopts(S, Options).
+-spec getopts(socket(),[gen_tcp:option_name()]) -> {ok,[gen_tcp:option()]}|{error,_}.
+getopts(#socket{port=P}, Options) ->
+    inet:getopts(P, Options).
 
--spec setopts(handle(),[gen_tcp:option()]) -> boolean().
-setopts(#handle{socket=S}, Options) ->
-    ok =:= inet:setopts(S, Options).
-
-
--spec getopt_active(handle()) -> {ok,[{active,atom()|integer()}]}.
-getopt_active(Handle) ->
-    getopts(Handle, [active]).
-
--spec setopt_active(handle(),atom()|integer()) -> boolean().
-setopt_active(Handle, Value) ->
-    setopts(Handle, [{active,Value}]).
+-spec setopts(socket(),[gen_tcp:option()]) -> boolean().
+setopts(#socket{port=P}, Options) ->
+    ok =:= inet:setopts(P, Options).
 
 
--spec send(handle(),binary()) -> ok|{error,_}.
-send(#handle{socket=S}, Binary) ->
-    try gen_tcp:send(S, Binary)
+-spec getopt_active(socket()) -> {ok,[{active,atom()|integer()}]}.
+getopt_active(Socket) ->
+    getopts(Socket, [active]).
+
+-spec setopt_active(socket(),atom()|integer()) -> boolean().
+setopt_active(Socket, Value) ->
+    setopts(Socket, [{active,Value}]).
+
+
+-spec send(socket(),binary()) -> ok|{error,_}.
+send(#socket{port=P}, Binary) ->
+    try gen_tcp:send(P, Binary)
     catch
         _:Reason ->
             {error, Reason}
     end.
 
--spec recv(handle(),binary:cp()|non_neg_integer(),timeout())
-          -> {ok,binary(),handle()}|{error,_,handle()}.
-recv(#handle{socket=S,buf=B}=H, Term, Timeout) ->
-    case dispatch(S, B, Term, Timeout) of
+-spec recv(socket(),binary:cp()|non_neg_integer(),timeout())
+          -> {ok,binary(),socket()}|{error,_}.
+recv(#socket{port=P,buf=B}=S, Term, Timeout) ->
+    case dispatch(P, B, Term, Timeout) of
         {ok, Found, Rest} ->
-            {ok, Found, H#handle{buf = Rest}};
+            {ok, Found, S#socket{buf = Rest}};
         {error, Reason} ->
-            {error, Reason, H}
+            {error, Reason}
     end.
 
--spec recv(handle(),binary(),binary:cp()|non_neg_integer(),timeout())
-          -> {ok,binary(),handle()}|{error,_,handle()}.
-recv(#handle{socket=S,buf=B}=H, Binary, Term, Timeout) ->
-    case dispatch(S, <<B/binary,Binary/binary>>, Term, Timeout) of
+-spec recv(socket(),binary(),binary:cp()|non_neg_integer(),timeout())
+          -> {ok,binary(),socket()}|{error,_}.
+recv(#socket{port=P,buf=B}=S, Binary, Term, Timeout) ->
+    case dispatch(P, <<B/binary,Binary/binary>>, Term, Timeout) of
         {ok, Found, Rest} ->
-            {ok, Found, H#handle{buf = Rest}};
+            {ok, Found, S#socket{buf = Rest}};
         {error, Reason} ->
-            {error, Reason, H}
+            {error, Reason}
     end.
 
 
--spec call(handle(),binary(),binary:cp()|non_neg_integer(),timeout())
-          -> {ok,binary(),handle()}|{error,_,handle()}.
-call(#handle{}=H, Packet, Term, Timeout) ->
-    case send(H, Packet) of
+-spec call(socket(),binary(),binary:cp()|non_neg_integer(),timeout())
+          -> {ok,binary(),socket()}|{error,_}.
+call(#socket{}=S, Packet, Term, Timeout) ->
+    case send(S, Packet) of
         ok ->
-            case recv(H, Term, Timeout) of
-                {ok, Binary, Handle} ->
-                    {ok, Binary, Handle};
-                {error, Reason, Handle} ->
-                    {error, Reason, Handle}
+            case recv(S, Term, Timeout) of
+                {ok, Binary, Socket} ->
+                    {ok, Binary, Socket};
+                {error, Reason} ->
+                    {error, Reason}
             end;
         {error, Reason} ->
-            {error, Reason, H}
+            {error, Reason}
     end.
 
 %% == internal ==
