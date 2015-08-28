@@ -25,7 +25,8 @@
 -export([except/2]).
 -export([merge/2]).
 -export([combine/3, combine/4]).
--export([get_as_binary/4,
+-export([get/4,
+         get_as_binary/4,
          get_as_boolean/4,
          get_as_integer/4, get_as_integer/5, get_as_integer/6,
          get_as_list/4]).
@@ -99,34 +100,39 @@ combine(N, List1, List2, Excludes)
                     end, List1).
 
 
+-spec get(term(),pos_integer(),[tuple()],term()) -> term().
+get(Key, N, List, DefaultValue)
+  when ?IS_POS_INTEGER(N), is_list(List) ->
+    case lists:keyfind(Key, N, List) of
+        {Key, Term} -> Term;
+        false -> DefaultValue
+    end.
+
 -spec get_as_binary(term(),pos_integer(),[tuple()],binary()) -> binary().
 get_as_binary(Key, N, List, DefaultValue)
   when ?IS_POS_INTEGER(N), is_list(List), is_binary(DefaultValue) ->
-    case lists:keyfind(Key, N, List) of
-        {Key, Term} when is_binary(Term) -> Term;
-        {Key, Term} when is_integer(Term) -> integer_to_binary(Term);
-        {Key, Term} when is_list(Term) -> list_to_binary(Term);
-        false -> DefaultValue
+    case get(Key, N, List, DefaultValue) of
+        Term when is_integer(Term) -> integer_to_binary(Term);
+        Term when is_list(Term) -> list_to_binary(Term);
+        Term -> Term
     end.
 
 -spec get_as_boolean(term(),pos_integer(),[tuple()],boolean()) -> boolean().
 get_as_boolean(Key, N, List, DefaultValue)
   when ?IS_POS_INTEGER(N), is_list(List), ?IS_BOOLEAN(DefaultValue) ->
-    case lists:keyfind(Key, N, List) of
-        {Key, Term} when is_boolean(Term) -> Term;
-        {Key, Term} when is_binary(Term) -> Term =:= <<"true">>;
-        {Key, Term} when is_list(Term) -> Term =:= "true";
-        false -> DefaultValue
+    case get(Key, N, List, DefaultValue) of
+        Term when is_binary(Term) -> Term =:= <<"true">>;
+        Term when is_list(Term) -> Term =:= "true";
+        Term -> Term
     end.
 
 -spec get_as_integer(term(),pos_integer(),[tuple()],integer()) -> integer().
 get_as_integer(Key, N, List, DefaultValue)
   when ?IS_POS_INTEGER(N), is_list(List), is_integer(DefaultValue) ->
-    case lists:keyfind(Key, N, List) of
-        {Key, Term} when is_integer(Term) -> Term;
-        {Key, Term} when is_binary(Term) -> binary_to_integer(Term);
-        {Key, Term} when is_list(Term) -> list_to_integer(Term);
-        false -> DefaultValue
+    case get(Key, N, List, DefaultValue) of
+        Term when is_binary(Term) -> binary_to_integer(Term);
+        Term when is_list(Term) -> list_to_integer(Term);
+        Term -> Term
     end.
 
 -spec get_as_integer(term(),pos_integer(),[tuple()],integer(),integer()) -> integer().
@@ -142,9 +148,8 @@ get_as_integer(Key, N, List, DefaultValue, Max, Min)
 -spec get_as_list(term(),pos_integer(),[tuple()],list()) -> list().
 get_as_list(Key, N, List, DefaultValue)
   when ?IS_POS_INTEGER(N), is_list(List), is_list(DefaultValue) ->
-    case lists:keyfind(Key, N, List) of
-        {Key, Term} when is_list(Term) -> Term;
-        {Key, Term} when is_binary(Term) -> binary_to_list(Term);
-        {Key, Term} when is_integer(Term) -> integer_to_list(Term);
-        false -> DefaultValue
+    case get(Key, N, List, DefaultValue) of
+        Term when is_binary(Term) -> binary_to_list(Term);
+        Term when is_integer(Term) -> integer_to_list(Term);
+        Term -> Term
     end.
