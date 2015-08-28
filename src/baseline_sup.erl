@@ -30,11 +30,11 @@
 -export([init/1]).
 
 %% -- internal --
--type child() :: undefined| pid().
--type child_id() :: term().
--type startlink_ret() :: supervisor:startchild_ret().
--type sup_name() :: {local,atom()}|{global,atom()}|{via,module(),any()}.
--type sup_ref() :: atom()|pid().
+-type(child() :: undefined| pid()).
+-type(child_id() :: term()).
+-type(startlink_ret() :: supervisor:startchild_ret()).
+-type(sup_name() :: {local,atom()}|{global,atom()}|{via,module(),any()}).
+-type(sup_ref() :: atom()|pid()).
 
 %% == public ==
 
