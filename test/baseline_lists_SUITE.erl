@@ -15,7 +15,7 @@
          except_test/1,
          merge_test/1,
          combine_test/1,
-         get_as_binary_test/1, get_as_integer_test/1, get_as_list_test/1
+         get_as_binary_test/1, get_as_boolean_test/1, get_as_integer_test/1, get_as_list_test/1
         ]).
 
 %% == callback: ct ==
@@ -26,7 +26,7 @@ all() -> [
           except_test,
           merge_test,
           combine_test,
-          get_as_binary_test, get_as_integer_test, get_as_list_test
+          get_as_binary_test, get_as_boolean_test, get_as_integer_test, get_as_list_test
          ].
 
 %% == public ==
@@ -106,6 +106,18 @@ get_as_binary_test(_Config) ->
          { [d,1,L,<<"?">>], <<"?">> }
         ],
     [ E = test(get_as_binary,A) || {A,E} <- X ].
+
+get_as_boolean_test(_Config) ->
+    L = [ {a,true}, {b,<<"true">>}, {c,<<"True">>}, {d,"true"}, {e,"True"} ],
+    X = [
+         { [a,1,L,false], true },
+         { [b,1,L,false], true },
+         { [c,1,L,false], false },
+         { [d,1,L,false], true },
+         { [e,1,L,false], false },
+         { [f,1,L,false], false }
+        ],
+    [ E = test(get_as_boolean,A) || {A,E} <- X ].
 
 get_as_integer_test(_Config) ->
     L = [ {a,1}, {b,"2"}, {c,<<"3">>} ],
