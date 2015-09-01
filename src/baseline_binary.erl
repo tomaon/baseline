@@ -56,11 +56,11 @@ binary_to_word(Binary, Start, Endianness) ->
 -spec binary_to_unsigned(binary(),non_neg_integer(),non_neg_integer(),endianness()) -> non_neg_integer().
 binary_to_unsigned(Binary, Start, Length, little)
   when is_binary(Binary), ?IS_NON_NEG_INTEGER(Start), ?IS_NON_NEG_INTEGER(Length) ->
-    <<U:Length/integer-unsigned-little-unit:8>> = binary_part(Binary, {Start,Length}),
+    <<U:Length/integer-unsigned-little-unit:8>> = binary_part(Binary, Start, Length),
     U;
 binary_to_unsigned(Binary, Start, Length, big)
   when is_binary(Binary), ?IS_NON_NEG_INTEGER(Start), ?IS_NON_NEG_INTEGER(Length) ->
-    <<U:Length/integer-unsigned-big-unit:8>> = binary_part(Binary, {Start,Length}),
+    <<U:Length/integer-unsigned-big-unit:8>> = binary_part(Binary, Start, Length),
     U.
 
 -spec words_to_binary([non_neg_integer()],endianness()) -> binary().
@@ -84,11 +84,11 @@ unsigned_to_binary(Unsigned, Size, big)
 
 prefix(Binary1, Size1, Binary2, Size2) ->
     Size1 > 0 andalso Size2 > 0
-        andalso Size1 >= Size2 andalso Binary2 =:= binary_part(Binary1, {0,Size2}).
+        andalso Size1 >= Size2 andalso Binary2 =:= binary_part(Binary1, 0, Size2).
 
 suffix(Binary1, Size1, Binary2, Size2) ->
     Size1 > 0 andalso Size2 > 0
-        andalso Size1 >= Size2 andalso Binary2 =:= binary_part(Binary1, {Size1,-Size2}).
+        andalso Size1 >= Size2 andalso Binary2 =:= binary_part(Binary1, Size1, -Size2).
 
 
 binary_to_words(_Bianry, _Start, Length, _Endianness, List)
