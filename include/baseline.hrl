@@ -15,6 +15,9 @@
 
 -define(IS_TIMEOUT(T), (infinity =:= T orelse (is_integer(T) andalso (0 =< T)))).
 
+
+-define(IS_SET(A,B), A band B =/= 0).
+
 %% == type ==
 
 -type(endianness() :: big|little).
