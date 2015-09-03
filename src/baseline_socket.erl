@@ -126,10 +126,10 @@ dispatch(Socket, Binary, Term, Timeout) ->
     recv_text(Socket, Binary, Term, Timeout).
 
 recv_binary(Socket, Binary, Size, Timeout) ->
-    recv_binary(Socket, Binary, Size, Timeout, size(Binary) >= Size).
+    recv_binary(Socket, Binary, Size, Timeout, byte_size(Binary) >= Size).
 
 recv_binary(_Socket, Binary, Size, _Timeout, true) ->
-    erlang:insert_element(1, split_binary(Binary,Size), ok);
+    {ok, binary_part(Binary,0,Size), binary_part(Binary,Size,byte_size(Binary)-Size)};
 recv_binary(Socket, Binary, Size, Timeout, false) ->
     try gen_tcp:recv(Socket, 0, Timeout) of
         {ok, Packet} ->
@@ -145,7 +145,7 @@ recv_text(Socket, Binary, Pattern, Timeout) ->
     recv_text(Socket, Binary, Pattern, Timeout, binary:match(Binary,Pattern)).
 
 recv_text(_Socket, Binary, _Pattern, _Timeout, {S,L}) ->
-    {ok, binary_part(Binary,0,S), binary_part(Binary,S+L,size(Binary)-(S+L))};
+    {ok, binary_part(Binary,0,S), binary_part(Binary,S+L,byte_size(Binary)-(S+L))};
 recv_text(Socket, Binary, Pattern, Timeout, nomatch) ->
     try gen_tcp:recv(Socket, 0, Timeout) of
         {ok, Packet} ->
