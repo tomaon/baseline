@@ -23,7 +23,7 @@
 -export([connect/4, close/1]).
 -export([getopts/2, setopts/2]).
 -export([getopt_active/1, setopt_active/2]).
--export([send/2, recv/3, recv/4]).
+-export([send/2, recv/3]).
 -export([call/4]).
 
 %% -- internal --
@@ -85,16 +85,6 @@ send(#socket{port=P}, Binary) ->
           -> {ok,binary(),socket()}|{error,_}.
 recv(#socket{port=P,buf=B}=S, Term, Timeout) ->
     case dispatch(P, B, Term, Timeout) of
-        {ok, Found, Rest} ->
-            {ok, Found, S#socket{buf = Rest}};
-        {error, Reason} ->
-            {error, Reason}
-    end.
-
--spec recv(socket(),binary(),binary:cp()|non_neg_integer(),timeout())
-          -> {ok,binary(),socket()}|{error,_}.
-recv(#socket{port=P,buf=B}=S, Binary, Term, Timeout) ->
-    case dispatch(P, <<B/binary,Binary/binary>>, Term, Timeout) of
         {ok, Found, Rest} ->
             {ok, Found, S#socket{buf = Rest}};
         {error, Reason} ->
