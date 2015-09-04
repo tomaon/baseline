@@ -29,8 +29,10 @@
 %% -- internal --
 -record(socket,
         {
-          port       :: port(),                 % gen_tcp:socket()
-          buf = <<>> :: binary()
+          port          :: port(),              % gen_tcp:socket()
+          buf    = <<>> :: binary(),
+          start  = 0    :: non_neg_integer(),
+          length = 0    :: non_neg_integer()
         }).
 
 -type(socket() :: #socket{}).
@@ -73,76 +75,75 @@ setopt_active(Socket, Value) ->
     setopts(Socket, [{active,Value}]).
 
 
--spec send(socket(),binary()) -> ok|{error,_}.
-send(#socket{port=P}, Binary) ->
+-spec send(socket(),binary()) -> ok|{error,_,socket()}.
+send(#socket{port=P}=R, Binary) ->
     try gen_tcp:send(P, Binary)
     catch
         _:Reason ->
-            {error, Reason}
+            {error, Reason, R}
     end.
 
--spec recv(socket(),binary:cp()|non_neg_integer(),timeout())
-          -> {ok,binary(),socket()}|{error,_}.
-recv(#socket{port=P,buf=B}=S, Term, Timeout) ->
-    case dispatch(P, B, Term, Timeout) of
-        {ok, Found, Rest} ->
-            {ok, Found, S#socket{buf = Rest}};
-        {error, Reason} ->
-            {error, Reason}
-    end.
+-spec recv(socket(),non_neg_integer()|binary()|binary:cp(),timeout())
+          -> {ok,binary(),socket()}|{error,_,socket()}.
+recv(#socket{}=R, Term, Timeout)
+  when is_integer(Term) ->
+    recv_binary(R, Term, Timeout);
+recv(#socket{}=R, Term, Timeout) ->
+    recv_text(R, Term, Timeout).
+
+-spec recv_binary(socket(),non_neg_integer(),timeout())
+                 -> {ok,binary(),socket()}|{error,_,socket()}.
+recv_binary(#socket{length=L}=R, Length, Timeout) ->
+    recv_binary(R, Length, Timeout, L >= Length).
+
+-spec recv_text(socket(),binary()|binary:cp(),timeout())
+               -> {ok,binary(),socket()}|{error,_,socket()}.
+recv_text(#socket{buf=B,start=S,length=L}=R, Pattern, Timeout) ->
+    Binary = binary_part(B, S, L),
+    recv_text(R, Pattern, Timeout, Binary, L, binary:match(Binary,Pattern)).
 
 
--spec call(socket(),binary(),binary:cp()|non_neg_integer(),timeout())
-          -> {ok,binary(),socket()}|{error,_}.
-call(#socket{}=S, Packet, Term, Timeout) ->
-    case send(S, Packet) of
+-spec call(socket(),non_neg_integer()|binary(),binary:cp(),timeout())
+          -> {ok,binary(),socket()}|{error,_,socket()}.
+call(#socket{}=R, Packet, Term, Timeout) ->
+    case send(R, Packet) of
         ok ->
-            case recv(S, Term, Timeout) of
-                {ok, Binary, Socket} ->
-                    {ok, Binary, Socket};
-                {error, Reason} ->
-                    {error, Reason}
-            end;
-        {error, Reason} ->
-            {error, Reason}
+            recv(R, Term, Timeout);
+        {error, Reason, Socket} ->
+            {error, Reason, Socket}
     end.
 
 %% == internal ==
 
-dispatch(Socket, Binary, Term, Timeout)
-  when is_integer(Term) ->
-    recv_binary(Socket, Binary, Term, Timeout);
-dispatch(Socket, Binary, Term, Timeout) ->
-    recv_text(Socket, Binary, Term, Timeout).
-
-recv_binary(Socket, Binary, Size, Timeout) ->
-    recv_binary(Socket, Binary, Size, Timeout, byte_size(Binary) >= Size).
-
-recv_binary(_Socket, Binary, Size, _Timeout, true) ->
-    {ok, binary_part(Binary,0,Size), binary_part(Binary,Size,byte_size(Binary)-Size)};
-recv_binary(Socket, Binary, Size, Timeout, false) ->
-    try gen_tcp:recv(Socket, 0, Timeout) of
+update(#socket{port=P}=R, Binary, Length, Timeout) ->
+    try gen_tcp:recv(P, 0, Timeout) of
         {ok, Packet} ->
-            recv_binary(Socket, <<Binary/binary,Packet/binary>>, Size, Timeout);
-        {error, Reason} ->
-            {error, Reason}
-    catch
-        {error, Reason} ->
-            {error, Reason}
-    end.
-
-recv_text(Socket, Binary, Pattern, Timeout) ->
-    recv_text(Socket, Binary, Pattern, Timeout, binary:match(Binary,Pattern)).
-
-recv_text(_Socket, Binary, _Pattern, _Timeout, {S,L}) ->
-    {ok, binary_part(Binary,0,S), binary_part(Binary,S+L,byte_size(Binary)-(S+L))};
-recv_text(Socket, Binary, Pattern, Timeout, nomatch) ->
-    try gen_tcp:recv(Socket, 0, Timeout) of
-        {ok, Packet} ->
-            recv_text(Socket, <<Binary/binary,Packet/binary>>, Pattern, Timeout);
+            {ok, R#socket{buf = <<Binary/binary,Packet/binary>>,
+                          start = 0, length = Length + byte_size(Packet)}};
         {error, Reason} ->
             {error, Reason}
     catch
         _:Reason ->
             {error, Reason}
+    end.
+
+
+recv_binary(#socket{buf=B,start=S,length=L}=R, Length, _Timeout, true) ->
+    {ok, binary_part(B,S,Length), R#socket{start = S+Length, length = L-Length}};
+recv_binary(#socket{buf=B,start=S,length=L}=R, Length, Timeout, false) ->
+    case update(R, binary_part(B,S,L), L, Timeout) of
+        {ok, Socket} ->
+            recv_binary(Socket, Length, Timeout);
+        {error, Reason} ->
+            {error, Reason, R}
+    end.
+
+recv_text(#socket{start=S}=R, _Pattern, _Timeout, Binary, Length, {MS,ML}) ->
+    {ok, binary_part(Binary,0,MS), R#socket{start = S+(MS+ML), length = Length-(MS+ML)}};
+recv_text(#socket{}=R, Pattern, Timeout, Binary, Length, nomatch) ->
+    case update(R, Binary, Length, Timeout) of
+        {ok, Socket} ->
+            recv_text(Socket, Pattern, Timeout);
+        {error, Reason} ->
+            {error, Reason, R}
     end.
