@@ -75,12 +75,12 @@ setopt_active(Socket, Value) ->
     setopts(Socket, [{active,Value}]).
 
 
--spec send(socket(),binary()) -> ok|{error,_,socket()}.
-send(#socket{port=P}=R, Binary) ->
+-spec send(socket(),binary()) -> ok|{error,_}.
+send(#socket{port=P}, Binary) ->
     try gen_tcp:send(P, Binary)
     catch
         _:Reason ->
-            {error, Reason, R}
+            {error, Reason}
     end.
 
 -spec recv(socket(),non_neg_integer()|binary()|binary:cp(),timeout())
@@ -109,8 +109,8 @@ call(#socket{}=R, Packet, Term, Timeout) ->
     case send(R, Packet) of
         ok ->
             recv(R, Term, Timeout);
-        {error, Reason, Socket} ->
-            {error, Reason, Socket}
+        {error, Reason} ->
+            {error, Reason, R}
     end.
 
 %% == internal ==
