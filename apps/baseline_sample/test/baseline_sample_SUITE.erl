@@ -288,7 +288,7 @@ test(Args) ->
     test(baseline_sample, Args).
 
 test(Name, Args) ->
-    [ apply(application,F, [Name]) || F <- [ unload, load ] ],
+    _ = [ apply(application,F,[Name]) || F <- [ unload, load ] ],
     [ application:set_env(Name,K,V) || {K,V} <- Args ],
     case apply(Name, start, []) of
         ok ->
