@@ -116,8 +116,9 @@ call(#socket{}=R, Packet, Term, Timeout) ->
 
 
 -spec unshift(socket(),binary()) -> socket().
-unshift(#socket{buf=B,length=L}=R, Binary) ->
-    R#socket{buf = <<Binary/binary,B/binary>>, length = L+byte_size(B)}.
+unshift(#socket{buf=B,start=S,length=L}=R, Binary) ->
+    X = binary_part(B, S, L),
+    R#socket{buf = <<Binary/binary,X/binary>>, start = 0, length = byte_size(Binary)+L}.
 
 %% == internal ==
 
