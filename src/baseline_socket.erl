@@ -25,6 +25,7 @@
 -export([getopt_active/1, setopt_active/2]).
 -export([send/2, recv/3]).
 -export([call/4]).
+-export([unshift/2]).
 
 %% -- internal --
 -record(socket,
@@ -112,6 +113,11 @@ call(#socket{}=R, Packet, Term, Timeout) ->
         {error, Reason} ->
             {error, Reason, R}
     end.
+
+
+-spec unshift(socket(),binary()) -> socket().
+unshift(#socket{buf=B,length=L}=R, Binary) ->
+    R#socket{buf = <<Binary/binary,B/binary>>, length = L+byte_size(B)}.
 
 %% == internal ==
 
