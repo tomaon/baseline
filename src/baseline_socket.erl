@@ -104,7 +104,7 @@ recv_text(#socket{buf=B,start=S,length=L}=R, Pattern, Timeout) ->
     recv_text(R, Pattern, Timeout, Binary, L, binary:match(Binary,Pattern)).
 
 
--spec call(socket(),non_neg_integer()|binary(),binary:cp(),timeout())
+-spec call(socket(),binary(),non_neg_integer()|binary()|binary:cp(),timeout())
           -> {ok,binary(),socket()}|{error,_,socket()}.
 call(#socket{}=R, Packet, Term, Timeout) ->
     {ok, [{active,V}]} = getopt_active(R),
