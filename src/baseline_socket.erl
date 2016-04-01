@@ -107,11 +107,14 @@ recv_text(#socket{buf=B,start=S,length=L}=R, Pattern, Timeout) ->
 -spec call(socket(),non_neg_integer()|binary(),binary:cp(),timeout())
           -> {ok,binary(),socket()}|{error,_,socket()}.
 call(#socket{}=R, Packet, Term, Timeout) ->
-    case send(R, Packet) of
+    {ok, [{active,V}]} = getopt_active(R),
+    try setopt_active(R, false) andalso send(R, Packet) of
         ok ->
             recv(R, Term, Timeout);
         {error, Reason} ->
             {error, Reason, R}
+    after
+        setopt_active(R, V)
     end.
 
 
