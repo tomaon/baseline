@@ -1,0 +1,5 @@
+%% -*- erlang -*-
+{incl_mods, [
+             baseline_drv_sample,
+             baseline_drv_sample_server
+            ]}.

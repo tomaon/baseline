@@ -1,6 +1,0 @@
-%% -*- erlang -*-
-{incl_mods, [
-             baseline_drv,
-            %baseline_drv_app,
-             baseline_drv_port
-            ]}.

@@ -1,29 +1,41 @@
-%% =============================================================================
-%% Copyright 2014-2015 AONO Tomohiko
-%%
-%% This library is free software; you can redistribute it and/or
-%% modify it under the terms of the GNU Lesser General Public
-%% License version 2.1 as published by the Free Software Foundation.
-%%
-%% This library is distributed in the hope that it will be useful,
-%% but WITHOUT ANY WARRANTY; without even the implied warranty of
-%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-%% Lesser General Public License for more details.
-%%
-%% You should have received a copy of the GNU Lesser General Public
-%% License along with this library; if not, write to the Free Software
-%% Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
-%% =============================================================================
-
 -module(baseline).
 
 -include("internal.hrl").
 
 %% -- public --
+-export([start/1, start/2, stop/1]).
 -export([flush/0]).
+
+-type(reason() :: {atom(), _}).
+
+-export_type([reason/0]).
 
 %% == public ==
 
+-spec start(application()) -> ok|{error, reason()}.
+start(Application) ->
+    start(Application, temporary).
+
+-spec start(application(), restart_type()) -> ok|{error, reason()}.
+start(Application, RestartType)
+  when ?IS_APPLICATION(application), ?IS_RESTART_TYPE(RestartType) ->
+    case application:ensure_all_started(Application, RestartType) of
+        {ok, _Started} ->
+            ok;
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
+-spec stop(application()) -> ok|{error, reason()}.
+stop(Application)
+  when ?IS_APPLICATION(application) ->
+    application:stop(Application).
+
+
 -spec flush() -> ok.
 flush() ->
-    receive _ -> flush() after 0 -> ok end.
+    receive
+        _ -> flush()
+    after
+        0 -> ok
+    end.

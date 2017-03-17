@@ -1,54 +1,44 @@
-%% =============================================================================
-%% Copyright 2014-2015 AONO Tomohiko
-%%
-%% This library is free software; you can redistribute it and/or
-%% modify it under the terms of the GNU Lesser General Public
-%% License version 2.1 as published by the Free Software Foundation.
-%%
-%% This library is distributed in the hope that it will be useful,
-%% but WITHOUT ANY WARRANTY; without even the implied warranty of
-%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-%% Lesser General Public License for more details.
-%%
-%% You should have received a copy of the GNU Lesser General Public
-%% License along with this library; if not, write to the Free Software
-%% Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
-%% =============================================================================
-
 -module(baseline_lists).
 
 -include("internal.hrl").
 
 %% -- public --
--export([choose/1, choose/2]).
+-export([combine/2, combine/3]).
 -export([equalize/2]).
--export([except/2]).
--export([merge/2]).
--export([combine/3, combine/4]).
--export([get/4,
-         get_as_binary/4,
-         get_as_boolean/4,
-         get_as_integer/4, get_as_integer/5, get_as_integer/6,
-         get_as_list/4]).
+-export([except/3]).
+-export([merge/3]).
+-export([get_element/5]).
+-export([get_value/2, get_value/3,
+         get_value_as_binary/3,
+         get_value_as_boolean/3,
+         get_value_as_float/3, get_value_as_float/4, get_value_as_float/5,
+         get_value_as_integer/3, get_value_as_integer/4, get_value_as_integer/5,
+         get_value_as_list/3]).
 
 %% == public ==
 
--spec choose([term()]) -> term()|undefined.
-choose(List) ->
-    choose(List, 2).
+-spec combine([tuple()], [tuple()]) -> [tuple()].
+combine(List1, List2)
+  when is_list(List1), is_list(List2) ->
+    lists:map(fun ({K, V}) ->
+                      case lists:keyfind(K, 1, List2) of
+                          false ->
+                              {K, V};
+                          {K, T} ->
+                              {T, V}
+                      end
+              end, List1).
 
--spec choose([term()], integer()) -> term()|undefined.
-choose([], _Size) ->
-    undefined;
-choose(List, Size)
-  when is_list(List), is_integer(Size) ->
-    lists:nth(1 + binary:decode_unsigned(crypto:rand_bytes(Size)) rem length(List), List).
+-spec combine([tuple()], [tuple()], [term()]) -> [tuple()].
+combine(List1, List2, Excludes)
+  when is_list(List1), is_list(List2), is_list(Excludes) ->
+    except(1, combine(List1, List2), proplists:unfold(Excludes)).
 
 
--spec equalize(pos_integer(),pos_integer()) -> [pos_integer()].
+-spec equalize(pos_integer(), pos_integer()) -> [pos_integer()].
 equalize(N, W)
   when ?IS_POS_INTEGER(N), ?IS_POS_INTEGER(W) ->
-    equalize(min(N,W), 0, N div W, N rem W, []).
+    equalize(min(N, W), 0, N div W, N rem W, []).
 
 equalize(0, _Sum, _Div, _Rem, List) ->
     lists:reverse(List);
@@ -60,96 +50,129 @@ equalize(Num, Sum, Div, Rem, List) ->
     equalize(Num - 1, E, Div, Rem - 1, [E|List]).
 
 
--spec except(proplists:proplist(),proplists:proplist()) -> proplists:proplist().
-except(List1, List2)
-  when is_list(List1), is_list(List2) ->
-    F = fun (E) ->
-                K = if is_tuple(E) -> element(1, E);
-                       true -> E
-                    end,
-                not(proplists:is_defined(K,List2))
-        end,
-    lists:filter(F, List1).
+-spec except(pos_integer(), [tuple()], [tuple()]) -> [tuple()].
+except(N, List1, List2)
+  when ?IS_POS_INTEGER(N), is_list(List1), is_list(List2) ->
+    lists:filter(fun(E) -> false =:= lists:keyfind(element(N, E), N, List2) end, List1).
 
 
--spec merge(proplists:proplist(),proplists:proplist()) -> proplists:proplist().
-merge(List1, List2)
-  when is_list(List1), is_list(List2) ->
-    lists:sort(List1 ++ baseline_lists:except(List2, List1)).
+-spec merge(pos_integer(), [tuple()], [tuple()]) -> [tuple()].
+merge(N, List1, List2)
+  when ?IS_POS_INTEGER(N), is_list(List1), is_list(List2) ->
+    lists:keysort(N, List2 ++ baseline_lists:except(N, List1, List2)).
 
 
--spec combine(pos_integer(),[tuple()],[tuple()]) -> [tuple()].
-combine(N, List1, List2) ->
-    combine(N, List1, List2, []).
-
--spec combine(pos_integer(),[tuple()],[tuple()],[term()]) -> [tuple()].
-combine(N, List1, List2, Excludes)
-  when ?IS_POS_INTEGER(N), is_list(List1), is_list(List2), is_list(Excludes) ->
-    lists:filtermap(fun ({K,V}) ->
-                            case lists:keyfind(K, N, List2) of
-                                {K, A} ->
-                                    {true, {A,V}};
-                                false ->
-                                    case lists:member(K, Excludes) of
-                                        false ->
-                                            {true, {K,V}};
-                                        true ->
-                                            false
-                                    end
-                            end
-                    end, List1).
-
-
--spec get(term(),pos_integer(),[tuple()],term()) -> term().
-get(Key, N, List, DefaultValue)
-  when ?IS_POS_INTEGER(N), is_list(List) ->
+-spec get_element(term(), pos_integer(), [tuple()], pos_integer(), term()) -> term().
+get_element(Key, N, List, M, Default)
+  when ?IS_POS_INTEGER(N), is_list(List), ?IS_POS_INTEGER(M) ->
     case lists:keyfind(Key, N, List) of
-        {Key, Term} -> Term;
-        false -> DefaultValue
+        false  ->
+            Default;
+        Tuple ->
+            element(M, Tuple)
     end.
 
--spec get_as_binary(term(),pos_integer(),[tuple()],binary()) -> binary().
-get_as_binary(Key, N, List, DefaultValue)
-  when ?IS_POS_INTEGER(N), is_list(List), is_binary(DefaultValue) ->
-    case get(Key, N, List, DefaultValue) of
-        Term when is_integer(Term) -> integer_to_binary(Term);
-        Term when is_list(Term) -> list_to_binary(Term);
-        Term -> Term
+
+-spec get_value(term(), [tuple()]) -> term().
+get_value(Key, List)
+  when is_list(List) ->
+    get_element(Key, 1, List, 2, undefined).
+
+-spec get_value(term(), [tuple()], term()) -> term().
+get_value(Key, List, Default)
+  when is_list(List) ->
+    get_element(Key, 1, List, 2, Default).
+
+-spec get_value_as_binary(term(), [tuple()], binary()) -> binary().
+get_value_as_binary(Key, List, Default)
+  when is_list(List), is_binary(Default) ->
+    case lists:keyfind(Key, 1, List) of
+        false ->
+            Default;
+        {_, Term} when is_atom(Term) ->
+            atom_to_binary(Term, latin1);
+        {_, Term}  when is_float(Term) ->
+            float_to_binary(Term);
+        {_, Term}  when is_integer(Term) ->
+            integer_to_binary(Term);
+        {_, Term}  when is_list(Term) ->
+            list_to_binary(Term)
     end.
 
--spec get_as_boolean(term(),pos_integer(),[tuple()],boolean()) -> boolean().
-get_as_boolean(Key, N, List, DefaultValue)
-  when ?IS_POS_INTEGER(N), is_list(List), ?IS_BOOLEAN(DefaultValue) ->
-    case get(Key, N, List, DefaultValue) of
-        Term when is_binary(Term) -> Term =:= <<"true">>;
-        Term when is_list(Term) -> Term =:= "true";
-        Term -> Term
+-spec get_value_as_boolean(term(), [tuple()], boolean()) -> boolean().
+get_value_as_boolean(Key, List, Default)
+  when is_list(List), is_boolean(Default) ->
+    case lists:keyfind(Key, 1, List) of
+        false ->
+            Default;
+        {_, Term}  when is_atom(Term) ->
+            Term =:= true;
+        {_, Term}  when is_binary(Term) ->
+            Term =:= <<"true">>;
+        {_, Term}  when is_float(Term) ->
+            Term =/= 0.0;
+        {_, Term}  when is_integer(Term) ->
+            Term =/= 0;
+        {_, Term}  when is_list(Term) ->
+            Term =:= "true"
     end.
 
--spec get_as_integer(term(),pos_integer(),[tuple()],integer()) -> integer().
-get_as_integer(Key, N, List, DefaultValue)
-  when ?IS_POS_INTEGER(N), is_list(List), is_integer(DefaultValue) ->
-    case get(Key, N, List, DefaultValue) of
-        Term when is_binary(Term) -> binary_to_integer(Term);
-        Term when is_list(Term) -> list_to_integer(Term);
-        Term -> Term
+-spec get_value_as_float(term(), [tuple()], float()) -> float().
+get_value_as_float(Key, List, Default)
+  when is_list(List), is_float(Default) ->
+    case lists:keyfind(Key, 1, List) of
+        false ->
+            Default;
+        {_, Term}  when is_binary(Term) ->
+            binary_to_float(Term);
+        {_, Term}  when is_list(Term) ->
+            list_to_float(Term)
     end.
 
--spec get_as_integer(term(),pos_integer(),[tuple()],integer(),integer()) -> integer().
-get_as_integer(Key, N, List, DefaultValue, Max)
-  when ?IS_POS_INTEGER(N), is_list(List), is_integer(DefaultValue), is_integer(Max) ->
-    min(get_as_integer(Key,N,List,DefaultValue), Max).
+-spec get_value_as_float(term(), [tuple()], float(), float()) -> float().
+get_value_as_float(Key, List, Default, Max)
+  when is_list(List), is_float(Default), is_float(Max) ->
+    min(get_value_as_float(Key, List, Default), Max).
 
--spec get_as_integer(term(),pos_integer(),[tuple()],integer(),integer(),integer()) -> integer().
-get_as_integer(Key, N, List, DefaultValue, Max, Min)
-  when ?IS_POS_INTEGER(N), is_list(List), is_integer(DefaultValue), is_integer(Max), is_integer(Min), Max >= Min ->
-    min(max(get_as_integer(Key,N,List,DefaultValue),Min), Max).
+-spec get_value_as_float(term(), [tuple()], float(), float(), float()) -> float().
+get_value_as_float(Key, List, Default, Max, Min)
+  when is_list(List), is_float(Default), is_float(Max), is_float(Min), Max >= Min ->
+    min(max(get_value_as_float(Key, List, Default), Min), Max).
 
--spec get_as_list(term(),pos_integer(),[tuple()],list()) -> list().
-get_as_list(Key, N, List, DefaultValue)
-  when ?IS_POS_INTEGER(N), is_list(List), is_list(DefaultValue) ->
-    case get(Key, N, List, DefaultValue) of
-        Term when is_binary(Term) -> binary_to_list(Term);
-        Term when is_integer(Term) -> integer_to_list(Term);
-        Term -> Term
+-spec get_value_as_integer(term(), [tuple()], integer()) -> integer().
+get_value_as_integer(Key, List, Default)
+  when is_list(List), is_integer(Default) ->
+    case lists:keyfind(Key, 1, List) of
+        false ->
+            Default;
+        {_, Term}  when is_binary(Term) ->
+            binary_to_integer(Term);
+        {_, Term}  when is_list(Term) ->
+            list_to_integer(Term)
+    end.
+
+-spec get_value_as_integer(term(), [tuple()], integer(), integer()) -> integer().
+get_value_as_integer(Key, List, Default, Max)
+  when is_list(List), is_integer(Default), is_integer(Max) ->
+    min(get_value_as_integer(Key, List, Default), Max).
+
+-spec get_value_as_integer(term(), [tuple()], integer(), integer(), integer()) -> integer().
+get_value_as_integer(Key, List, Default, Max, Min)
+  when is_list(List), is_integer(Default), is_integer(Max), is_integer(Min), Max >= Min ->
+    min(max(get_value_as_integer(Key, List, Default), Min), Max).
+
+-spec get_value_as_list(term(), [tuple()], list()) -> list().
+get_value_as_list(Key, List, Default)
+  when is_list(List), is_list(Default) ->
+    case lists:keyfind(Key, 1, List) of
+        false ->
+            Default;
+        {_, Term}  when is_atom(Term) ->
+            atom_to_list(Term);
+        {_, Term}  when is_binary(Term) ->
+            binary_to_list(Term);
+        {_, Term}  when is_float(Term) ->
+            float_to_list(Term);
+        {_, Term}  when is_integer(Term) ->
+            integer_to_list(Term)
     end.
