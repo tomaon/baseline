@@ -1,15 +1,13 @@
 #
  ERLANG_HOME ?= /opt/erlang/release/latest
 
- REBAR ?= ../bin/rebar3
+ REBAR ?= ./rebar3
 
  ENV  =
+ ENV += ERL_FLAGS="+A 10"
  ENV += REBAR_CONFIG=rebar3.config
  ENV += PATH=$(ERLANG_HOME)/bin:$(PATH)
 #ENV += DEBUG=1
-
- OPT  =
- OPT += --config priv/conf/$(1).config
 
  WORK = .rebar3
 
@@ -31,8 +29,8 @@ clean: rm
 	for P in prod test; do $(ENV) $(REBAR) as $$P clean; done
 cleanall: rm
 	for P in prod test; do $(ENV) $(REBAR) as $$P clean --all; done
-distclean:
-	rm -rf $(WORK) rebar.lock
+distclean: rm
+	rm -rf $(WORK)
 
 rm: rm-autosave rm-dump rm-logs
 
@@ -45,9 +43,16 @@ rm-logs:
 
 test: rm-logs ct
 
-#
-n%:
-	$(ENV) $(REBAR) as test shell $(call OPT,$@)
 
-x%:
-	$(ENV) ERL_LIBS=$(WORK)/test/lib escript priv/escript/$@.escript
+cross_cover_analyse:
+	$(ENV) escript priv/escript/$@.escript $(WORK)/test/logs
+
+elvis:
+	elvis rock
+
+#
+n%: compile
+	$(ENV) ERL_LIBS=$(WORK)/test/lib erl -sname $@ -config examples/conf/$@ -s baseline_sample
+
+x%: compile
+	$(ENV) ERL_LIBS=$(WORK)/test/lib escript examples/escript/$@.escript

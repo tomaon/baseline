@@ -1,0 +1,12 @@
+%% -*- erlang -*-
+{incl_mods, [
+             baseline,
+             baseline_app,
+             baseline_binary,
+             baseline_ct,
+             baseline_lists,
+             baseline_proclib,
+             baseline_server,
+             baseline_socket,
+             baseline_statem
+            ]}.

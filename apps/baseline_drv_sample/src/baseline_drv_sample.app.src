@@ -1,0 +1,33 @@
+%% -*- erlang -*-
+{
+  application,
+  baseline_drv_sample,
+  [
+   {description, ""},
+   {vsn, "0.3.0"},
+   {registered, [baseline_drv_sample_sup]},
+   {included_applications, [baseline]},
+   {applications, [kernel, stdlib]},
+   {mod, {baseline_app, [
+                         {driver, [
+                                   baseline_drv_sample
+                                  ]},
+                         {sup, [
+                                {local, baseline_drv_sample_sup},
+                                {
+                                  {simple_one_for_one, 10, 1},
+                                  [
+                                   {
+                                     undefined,
+                                     {baseline_drv_sample_server, start_link, []},
+                                     temporary,
+                                     5000,
+                                     worker,
+                                     []
+                                   }
+                                  ]
+                                }
+                               ]}
+                        ]}}
+  ]
+}.

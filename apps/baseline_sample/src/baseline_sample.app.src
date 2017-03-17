@@ -1,21 +1,23 @@
 %% -*- erlang -*-
-{application, baseline_sample,
- [
-  {description, ""},
-  {vsn, "sample"},
-  {registered, [baseline_sample_sup]},
-  {included_applications, []},
-  {applications, [kernel,stdlib]},
-  {env, [
-        ]},
-  {mod, {baseline_app, [
-%                       {sup, [
-%                              {local, baseline_sample_sup},
-%                              {
-%                                {one_for_one, 10, 1},
-%                                [
-%                                ]
-%                              }
-%                             ]}
-                       ]}}
- ]}.
+{
+  application,
+  baseline_sample,
+  [
+   {description, ""},
+   {vsn, "0.3.0"},
+   {registered, [baseline_sample_sup]},
+   {included_applications, [baseline]},
+   {applications, [kernel, stdlib]},
+   {env, [
+          {sup, [
+                 {local, baseline_sample_sup},
+                 {
+                   {one_for_one, 10, 1},
+                   [
+                   ]
+                 }
+                ]}
+         ]},
+   {mod, {baseline_app, []}}
+  ]
+}.

@@ -1,26 +1,19 @@
-%% =============================================================================
-%% =============================================================================
-
 -module(baseline_sample).
 
+-include("../../../include/baseline.hrl").
+
 %% -- public --
--export([start/0, start/1, stop/0, version/0]).
+-export([start/0, stop/0]).
+
+%% -- internal --
+-type(reason() :: baseline:reason()).
 
 %% == public ==
 
--spec start() -> ok|{error,_}.
+-spec start() -> ok|{error, reason()}.
 start() ->
-    start(temporary).
+    baseline:start(?MODULE).
 
--spec start(atom()) -> ok|{error,_}.
-start(Type)
-  when is_atom(Type) ->
-    baseline_app:ensure_start(?MODULE, Type).
-
--spec stop() -> ok|{error,_}.
+-spec stop() -> ok|{error, reason()}.
 stop() ->
-    application:stop(?MODULE).
-
--spec version() -> [non_neg_integer()].
-version() ->
-    baseline_app:version(?MODULE).
+    baseline:stop(?MODULE).
