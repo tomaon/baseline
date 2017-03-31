@@ -4,6 +4,7 @@
              baseline_app,
              baseline_binary,
              baseline_ct,
+             baseline_ets,
              baseline_lists,
              baseline_proclib,
              baseline_server,

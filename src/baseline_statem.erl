@@ -26,13 +26,18 @@ start_link(Args, Id)
   when is_list(Args), ?IS_ID(Id) ->
     case gen_statem:start_link(?MODULE, [Id], []) of
         {ok, Pid} ->
-            case gen_statem:call(Pid, {setup, Args}, infinity) of
+            try gen_statem:call(Pid, {setup, Args}, infinity) of
                 ok ->
                     {ok, Pid};
                 {error, Reason} ->
                     ok = gen_statem:stop(Pid),
                     {error, Reason}
-            end
+            catch
+                exit:Reason ->
+                    {error, Reason}
+            end;
+        {error, Reason} ->
+            {error, Reason}
     end.
 
 %% -- behaviour: gen_statem --
@@ -51,9 +56,7 @@ code_change(_OldVsn, OldState, OldData, _Extra) ->
 
 
 loaded(info, initialize, Data) ->
-    {next_state, initialized, Data};
-loaded(_EventType, _EventContent, Data) ->
-    {stop, enosys, Data}.
+    {next_state, initialized, Data}.
 
 initialized({call, From}, {setup, Args}, #data{id=I}=D)
   when I =/= undefined ->
@@ -61,18 +64,14 @@ initialized({call, From}, {setup, Args}, #data{id=I}=D)
         Data ->
             {next_state, ready, Data, {reply, From, ok}}
     catch
-        {Error, Data} ->
-            {keep_state, Data, {reply, From, Error}}
-    end;
-initialized(_EventType, _EventContent, Data) ->
-    {stop, enosys, Data}.
+        {Reason, Data} ->
+            {keep_state, Data, {reply, From, {error, Reason}}}
+    end.
 
 ready(enter, _OldState, Data) ->
     {keep_state, Data};
 ready(info, {'EXIT', _Pid, Reason}, Data) ->
-    {stop, Reason, Data};
-ready(_EventType, _EventContent, Data) ->
-    {stop, enosys, Data}.
+    {stop, Reason, Data}.
 
 %% == internal ==
 

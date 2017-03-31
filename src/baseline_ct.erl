@@ -17,7 +17,11 @@ setup(Key) ->
 -spec test(atom(), atom(), [term()]) -> term().
 test(Module, Function, Args)
   when is_atom(Module), is_atom(Function), is_list(Args) ->
-    Value = apply(Module, Function, Args),
+    Value = try apply(Module, Function, Args)
+            catch
+                C:E ->
+                    {'catch', C, E}
+            end,
     ct:log("{m,f,a}={~p,~p,~p} -> ~p", [Module, Function, Args, Value]),
     Value.
 

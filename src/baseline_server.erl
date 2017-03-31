@@ -25,13 +25,18 @@ start_link(Args, Id)
   when is_list(Args), ?IS_ID(Id) ->
     case gen_server:start_link(?MODULE, [Id], []) of
         {ok, Pid} ->
-            case gen_server:call(Pid, {setup, Args}, infinity) of
+            try gen_server:call(Pid, {setup, Args}, infinity) of
                 ok ->
                     {ok, Pid};
                 {error, Reason} ->
                     ok = gen_server:stop(Pid),
                     {error, Reason}
-            end
+            catch
+                exit:Reason ->
+                    {error, Reason}
+            end;
+        {error, Reason} ->
+            {error, Reason}
     end.
 
 %% -- behaviour: gen_server --
@@ -51,19 +56,15 @@ handle_call({setup, Args}, _From, #state{id=I}=S)
         State ->
             {reply, ok, State}
     catch
-        {Error, State} ->
-            {reply, Error, State}
-    end;
-handle_call(_Request, _From, State) ->
-    {stop, enosys, {error, enosys}, State}.
+        {Reason, State} ->
+            {reply, {error, Reason}, State}
+    end.
 
 handle_cast(_Request, State) ->
     {stop, enosys, State}.
 
 handle_info({'EXIT', _Pid, Reason}, State) ->
-    {stop, Reason, State};
-handle_info(_Info, State) ->
-    {stop, enosys, State}.
+    {stop, Reason, State}.
 
 %% == internal ==
 
