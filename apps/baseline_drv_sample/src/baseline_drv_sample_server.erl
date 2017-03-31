@@ -31,11 +31,14 @@ start_link(Id)
         ],
     case gen_server:start_link(?MODULE, [Id], []) of
         {ok, Pid} ->
-            case gen_server:call(Pid, {setup, L}, infinity) of
+            try gen_server:call(Pid, {setup, L}, infinity) of
                 ok ->
                     {ok, Pid};
                 {error, Reason} ->
                     ok = gen_server:stop(Pid),
+                    {error, Reason}
+            catch
+                exit:Reason ->
                     {error, Reason}
             end;
         {error, Reason} ->
@@ -91,14 +94,14 @@ handle_cast({command, Data}, #state{port=P}=S) ->
             {noreply, S}
     catch
         error:Reason ->
-            {stop, {error, Reason}, S}
+            {stop, Reason, S}
     end.
 
 handle_info({P, {data, B}}, #state{port=P}=S) ->
     _ = apply(gen_server, reply, binary_to_term(B)),
     {noreply, S};
 handle_info({'EXIT', P, Reason}, #state{port=P}=S) ->
-    {stop, {port_close, Reason}, S#state{port = undefined}};
+    {stop, Reason, S#state{port = undefined}};
 handle_info({'EXIT', _Pid, Reason}, State) ->
     {stop, Reason, State}.
 

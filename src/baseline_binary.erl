@@ -4,7 +4,7 @@
 
 %% -- public --
 -export([implode/3]).
--export([split/3]).
+-export([split/2, split/3]).
 -export([prefix/2, suffix/2]).
 -export([binary_to_words/3, binary_to_words/4, binary_to_word/3, binary_to_unsigned/4,
          words_to_binary/2, word_to_binary/2, unsigned_to_binary/3]).
@@ -26,6 +26,20 @@ implode(_Fun, [], _Separator, [_|T]) ->
 implode(Fun, [H|T], Separator, List) ->
     implode(Fun, T, Separator, [Separator|[Fun(H)|List]]).
 
+
+-spec split(binary(), pattern()) -> {[binary()], binary()}.
+split(Binary, Pattern) ->
+    split(Binary, 0, [], binary:matches(Binary, Pattern)).
+
+split(Binary, Start, List, []) ->
+    {lists:reverse(List), binary_part(Binary, Start, size(Binary) - Start)};
+split(Binary, Start, List, [{S, L}|T]) ->
+    case binary_part(Binary, Start, S - Start) of
+        <<>> ->
+            split(Binary, S + L, List, T);
+        Part ->
+            split(Binary, S + L, [Part|List], T)
+    end.
 
 -spec split(binary(), pattern(), pattern()) -> [[binary()]].
 split(Binary, FieldPattern, LinePattern) ->

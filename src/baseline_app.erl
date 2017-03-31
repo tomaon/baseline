@@ -6,6 +6,7 @@
 -export([children/1]).
 -export([endianness/0]).
 -export([find/2]).
+-export([get_all_env/0]).
 -export([version/1]).
 
 -behaviour(application).
@@ -30,7 +31,7 @@ children(SupRef)
 
 -spec endianness() -> endianness().
 endianness() ->
-    Env = get_env(),
+    Env = get_all_env(),
     case is_list(Env) andalso lists:keyfind(endianness, 1, Env) of
         false ->
             case <<1:16/native>> of
@@ -39,6 +40,16 @@ endianness() ->
             end;
         Endianness ->
             Endianness
+    end.
+
+
+-spec get_all_env() -> [{atom(), term()}].
+get_all_env() ->
+    case application:get_application() of
+        {ok, Application} ->
+            application:get_all_env(Application);
+        undefined ->
+            undefined
     end.
 
 
@@ -64,7 +75,7 @@ version(Application)
 %% -- behaviour: application --
 
 start(StartType, []) ->
-    start(StartType, get_env());
+    start(StartType, get_all_env());
 start(_StartType, StartArgs) ->
     try lists:foldl(fun setup/2, setup(), StartArgs) of
         #state{pid=P}=S ->
@@ -97,10 +108,16 @@ setup() ->
 
 setup({driver, Drivers}, State) ->
     lists:foldl(fun setup_driver/2, State#state{drivers = []}, Drivers);
-setup({sup, [SupName, {_, ChildSpecs}=A]}, State) ->
+setup({sup, [{_, ChildSpecs}=A]}, State)
+  when is_list(ChildSpecs) ->
+    check_childspecs(ChildSpecs, State) andalso
+        setup_sup(A, State);
+setup({sup, [SupName, {_, ChildSpecs}=A]}, State)
+  when is_list(ChildSpecs) ->
     check_childspecs(ChildSpecs, State) andalso
         setup_sup(SupName, A, State);
-setup({sup_child, ChildSpecs}, State) ->
+setup({sup_child, ChildSpecs}, State)
+  when is_list(ChildSpecs) ->
     check_childspecs(ChildSpecs, State) andalso
         lists:foldl(fun setup_sup_child/2, State, ChildSpecs);
 setup(_, State) ->
@@ -119,6 +136,16 @@ setup_driver(Name, State) ->
             throw({Reason, State});
         Path ->
             setup_driver({Path, Name}, State)
+    end.
+
+setup_sup(Args, State) ->
+    case supervisor:start_link(?MODULE, Args) of
+        {ok, Pid} ->
+            State#state{pid = Pid};
+        ignore ->
+            throw({badarg, State});
+        {error, Reason} ->
+            throw({Reason, State})
     end.
 
 setup_sup(SupName, Args, State) ->
@@ -148,14 +175,6 @@ check_childspecs(ChildSpecs, State) ->
             true;
         {error, Reason} ->
             throw({Reason, State})
-    end.
-
-get_env() ->
-    case application:get_application() of
-        {ok, Application} ->
-            application:get_all_env(Application);
-        undefined ->
-            undefined
     end.
 
 get_key(Application, Key, Default) ->

@@ -91,11 +91,11 @@ get_value_as_binary(Key, List, Default)
             Default;
         {_, Term} when is_atom(Term) ->
             atom_to_binary(Term, latin1);
-        {_, Term}  when is_float(Term) ->
+        {_, Term} when is_float(Term) ->
             float_to_binary(Term);
-        {_, Term}  when is_integer(Term) ->
+        {_, Term} when is_integer(Term) ->
             integer_to_binary(Term);
-        {_, Term}  when is_list(Term) ->
+        {_, Term} when is_list(Term) ->
             list_to_binary(Term)
     end.
 
@@ -105,15 +105,15 @@ get_value_as_boolean(Key, List, Default)
     case lists:keyfind(Key, 1, List) of
         false ->
             Default;
-        {_, Term}  when is_atom(Term) ->
+        {_, Term} when is_atom(Term) ->
             Term =:= true;
-        {_, Term}  when is_binary(Term) ->
+        {_, Term} when is_binary(Term) ->
             Term =:= <<"true">>;
-        {_, Term}  when is_float(Term) ->
+        {_, Term} when is_float(Term) ->
             Term =/= 0.0;
-        {_, Term}  when is_integer(Term) ->
+        {_, Term} when is_integer(Term) ->
             Term =/= 0;
-        {_, Term}  when is_list(Term) ->
+        {_, Term} when is_list(Term) ->
             Term =:= "true"
     end.
 
@@ -123,9 +123,9 @@ get_value_as_float(Key, List, Default)
     case lists:keyfind(Key, 1, List) of
         false ->
             Default;
-        {_, Term}  when is_binary(Term) ->
+        {_, Term} when is_binary(Term) ->
             binary_to_float(Term);
-        {_, Term}  when is_list(Term) ->
+        {_, Term} when is_list(Term) ->
             list_to_float(Term)
     end.
 
@@ -145,9 +145,9 @@ get_value_as_integer(Key, List, Default)
     case lists:keyfind(Key, 1, List) of
         false ->
             Default;
-        {_, Term}  when is_binary(Term) ->
+        {_, Term} when is_binary(Term) ->
             binary_to_integer(Term);
-        {_, Term}  when is_list(Term) ->
+        {_, Term} when is_list(Term) ->
             list_to_integer(Term)
     end.
 
@@ -167,12 +167,12 @@ get_value_as_list(Key, List, Default)
     case lists:keyfind(Key, 1, List) of
         false ->
             Default;
-        {_, Term}  when is_atom(Term) ->
+        {_, Term} when is_atom(Term) ->
             atom_to_list(Term);
-        {_, Term}  when is_binary(Term) ->
+        {_, Term} when is_binary(Term) ->
             binary_to_list(Term);
-        {_, Term}  when is_float(Term) ->
+        {_, Term} when is_float(Term) ->
             float_to_list(Term);
-        {_, Term}  when is_integer(Term) ->
+        {_, Term} when is_integer(Term) ->
             integer_to_list(Term)
     end.

@@ -1,0 +1,15 @@
+%% -*- erlang -*-
+{env, [
+       {baseline_sample, [
+                          {sup_child, [
+                                       {
+                                         1,
+                                         {baseline_proclib, start_link, [[foo, bar, baz]]},
+                                         permanent,
+                                         5000,
+                                         worker,
+                                         []
+                                       }
+                                      ]}
+                         ]}
+      ]}.
