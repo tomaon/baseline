@@ -12,7 +12,7 @@
           {sup, [
                  {local, baseline_sample_sup},
                  {
-                   {one_for_one, 10, 1},
+                   {one_for_one, 1, 5},
                    [
                    ]
                  }

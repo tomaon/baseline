@@ -15,7 +15,7 @@
                          {sup, [
                                 {local, baseline_drv_sample_sup},
                                 {
-                                  {simple_one_for_one, 10, 1},
+                                  {simple_one_for_one, 1, 5},
                                   [
                                    {
                                      undefined,
