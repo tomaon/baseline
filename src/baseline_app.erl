@@ -5,7 +5,7 @@
 %% -- public --
 -export([children/1]).
 -export([endianness/0]).
--export([find/2]).
+-export([find/2, find/4]).
 -export([get_all_env/0]).
 -export([version/1]).
 
@@ -64,6 +64,18 @@ find(SupRef, Id)
     catch
         error:noproc ->
             undefined
+    end.
+
+-spec find(sup_ref(), id(), timeout(), pos_integer()) -> pid()|undefined.
+find(_SupRef, _Id, _Timeout, 0) ->
+    undefined;
+find(SupRef, Id, Timeout, Retry) ->
+    case baseline_app:find(SupRef, Id) of
+        undefined ->
+            ok = timer:sleep(Timeout),
+            find(SupRef, Id, Timeout, Retry - 1);
+        Pid ->
+            Pid
     end.
 
 

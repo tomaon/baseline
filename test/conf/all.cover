@@ -8,6 +8,5 @@
              baseline_lists,
              baseline_proclib,
              baseline_server,
-             baseline_socket,
              baseline_statem
             ]}.

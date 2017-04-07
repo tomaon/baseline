@@ -1,7 +1,7 @@
 -module(baseline_proclib).
 
 %% rd(state, {n}).
-%% F = fun(#state{n=N}=S) -> S#state{n = N+1} end.
+%% F = fun(#state{n=N}=S) -> S#state{n = N + 1} end.
 %% {ok, P} = baseline_proclib:start_link([a]).
 %% sys:statistics(P, true).
 %% sys:trace(P, true).

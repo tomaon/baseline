@@ -11,8 +11,10 @@
 -export([merge_test/1]).
 -export([get_element_test/1]).
 -export([get_value_test/1]).
--export([get_value_as_binary_test/1, get_value_as_boolean_test/1,
-         get_value_as_float_test/1, get_value_as_integer_test/1,
+-export([get_value_as_binary_test/1,
+         get_value_as_boolean_test/1,
+         get_value_as_float_test/1,
+         get_value_as_integer_test/1,
          get_value_as_list_test/1]).
 
 %% == public ==
@@ -29,8 +31,10 @@ groups() -> [
                                          merge_test,
                                          get_element_test,
                                          get_value_test,
-                                         get_value_as_binary_test, get_value_as_boolean_test,
-                                         get_value_as_integer_test, get_value_as_float_test,
+                                         get_value_as_binary_test,
+                                         get_value_as_boolean_test,
+                                         get_value_as_integer_test,
+                                         get_value_as_float_test,
                                          get_value_as_list_test
                                         ]}
             ].
