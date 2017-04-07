@@ -3,18 +3,56 @@
 -include("internal.hrl").
 
 %% -- public --
+-export([decode_unsigned/3, decode_unsigned/4, decode_unsigned/5,
+         encode_unsigned/2, encode_unsigned/3]).
 -export([implode/3]).
--export([split/2, split/3]).
--export([prefix/2, suffix/2]).
--export([binary_to_words/3, binary_to_words/4, binary_to_word/3, binary_to_unsigned/4,
-         words_to_binary/2, word_to_binary/2, unsigned_to_binary/3]).
+-export([split/2]).
 
 %% -- internal --
--define(WORD(N), ((N) * 4)).
+-define(IS_PATTERN(T), (true)).
 
 -type(pattern() :: binary()|[binary()]|binary:cp()).
 
 %% == public ==
+
+-spec decode_unsigned(binary(), non_neg_integer(), integer())
+                     -> non_neg_integer().
+decode_unsigned(Subject, Start, Length) ->
+    decode_unsigned(Subject, Start, Length, big).
+
+-spec decode_unsigned(binary(), non_neg_integer(), integer(), endianness())
+                     -> non_neg_integer().
+decode_unsigned(Subject, Start, Length, Endianness)
+  when is_binary(Subject), ?IS_NON_NEG_INTEGER(Start),
+       is_integer(Length), ?IS_ENDIANNESS(Endianness) ->
+    binary:decode_unsigned(binary_part(Subject, Start, Length), Endianness).
+
+-spec decode_unsigned(binary(), non_neg_integer(), pos_integer(), endianness(), pos_integer())
+                     -> [non_neg_integer()].
+decode_unsigned(Subject, Start, Length, Endianness, Incr)
+  when is_binary(Subject), ?IS_NON_NEG_INTEGER(Start),
+       ?IS_POS_INTEGER(Length), ?IS_ENDIANNESS(Endianness), ?IS_POS_INTEGER(Incr) ->
+    decode_unsigned(Subject, Start, Length, Endianness, Incr, []).
+
+decode_unsigned(_Subject, _Start, Length, _Endianness, Incr, List)
+  when Length < Incr ->
+    lists:reverse(List);
+decode_unsigned(Subject, Start, Length, Endianness, Incr, List) ->
+    E = decode_unsigned(Subject, Start, Incr, Endianness),
+    decode_unsigned(Subject, Start + Incr, Length - Incr, Endianness, Incr, [E|List]).
+
+-spec encode_unsigned(non_neg_integer(), pos_integer()) -> binary().
+encode_unsigned(Unsigned, Width) ->
+    encode_unsigned(Unsigned, Width, big).
+
+-spec encode_unsigned(non_neg_integer(), pos_integer(), endianness()) -> binary().
+encode_unsigned(Unsigned, Width, big)
+  when ?IS_NON_NEG_INTEGER(Unsigned), ?IS_POS_INTEGER(Width) ->
+    <<Unsigned:Width/integer-unsigned-big-unit:8>>;
+encode_unsigned(Unsigned, Width, little)
+  when ?IS_NON_NEG_INTEGER(Unsigned), ?IS_POS_INTEGER(Width) ->
+    <<Unsigned:Width/integer-unsigned-little-unit:8>>.
+
 
 -spec implode(function(), [term()], binary()) -> binary().
 implode(Fun, List, Separator)
@@ -28,7 +66,8 @@ implode(Fun, [H|T], Separator, List) ->
 
 
 -spec split(binary(), pattern()) -> {[binary()], binary()}.
-split(Binary, Pattern) ->
+split(Binary, Pattern)
+  when is_binary(Binary), ?IS_PATTERN(Pattern) ->
     split(Binary, 0, [], binary:matches(Binary, Pattern)).
 
 split(Binary, Start, List, []) ->
@@ -40,82 +79,3 @@ split(Binary, Start, List, [{S, L}|T]) ->
         Part ->
             split(Binary, S + L, [Part|List], T)
     end.
-
--spec split(binary(), pattern(), pattern()) -> [[binary()]].
-split(Binary, FieldPattern, LinePattern) ->
-    [ binary:split(E, FieldPattern) || E <- binary:split(Binary, LinePattern, [global]) ].
-
-
--spec prefix(binary(), binary()) -> boolean().
-prefix(Binary1, Binary2)
-  when is_binary(Binary1), is_binary(Binary2) ->
-    prefix(Binary1, byte_size(Binary1), Binary2, byte_size(Binary2)).
-
--spec suffix(binary(), binary()) -> boolean().
-suffix(Binary1, Binary2)
-  when is_binary(Binary1), is_binary(Binary2) ->
-    suffix(Binary1, byte_size(Binary1), Binary2, byte_size(Binary2)).
-
-
--spec binary_to_words(binary(), non_neg_integer(), endianness()) -> [non_neg_integer()].
-binary_to_words(Binary, Start, Endianness) ->
-    binary_to_words(Binary, Start, byte_size(Binary), Endianness, []).
-
--spec binary_to_words(binary(), non_neg_integer(), non_neg_integer(), endianness()) -> [non_neg_integer()].
-binary_to_words(Binary, Start, Length,  Endianness)
-  when is_binary(Binary), ?IS_NON_NEG_INTEGER(Start), ?IS_NON_NEG_INTEGER(Length), ?IS_ENDIANNESS(Endianness) ->
-    binary_to_words(Binary, Start, Length, Endianness, []).
-
--spec binary_to_word(binary(), non_neg_integer(), endianness()) -> non_neg_integer().
-binary_to_word(Binary, Start, Endianness) ->
-    binary_to_unsigned(Binary, Start, ?WORD(1), Endianness).
-
--spec binary_to_unsigned(binary(), non_neg_integer(), non_neg_integer(), endianness()) -> non_neg_integer().
-binary_to_unsigned(Binary, Start, Length, little)
-  when is_binary(Binary), ?IS_NON_NEG_INTEGER(Start), ?IS_NON_NEG_INTEGER(Length) ->
-    <<U:Length/integer-unsigned-little-unit:8>> = binary_part(Binary, Start, Length),
-    U;
-binary_to_unsigned(Binary, Start, Length, big)
-  when is_binary(Binary), ?IS_NON_NEG_INTEGER(Start), ?IS_NON_NEG_INTEGER(Length) ->
-    <<U:Length/integer-unsigned-big-unit:8>> = binary_part(Binary, Start, Length),
-    U.
-
--spec words_to_binary([non_neg_integer()], endianness()) -> binary().
-words_to_binary(List, Endianness)
-  when is_list(List), ?IS_ENDIANNESS(Endianness) ->
-    words_to_binary(List, Endianness, []).
-
--spec word_to_binary(non_neg_integer(), endianness()) -> binary().
-word_to_binary(Unsigned, Endianness) ->
-    unsigned_to_binary(Unsigned, ?WORD(1), Endianness).
-
--spec unsigned_to_binary(non_neg_integer(), non_neg_integer(), endianness()) -> binary().
-unsigned_to_binary(Unsigned, Size, little)
-  when ?IS_NON_NEG_INTEGER(Unsigned), ?IS_NON_NEG_INTEGER(Size)->
-    <<Unsigned:Size/integer-unsigned-little-unit:8>>;
-unsigned_to_binary(Unsigned, Size, big)
-  when ?IS_NON_NEG_INTEGER(Unsigned), ?IS_NON_NEG_INTEGER(Size)->
-    <<Unsigned:Size/integer-unsigned-big-unit:8>>.
-
-%% == internal ==
-
-prefix(Binary1, Size1, Binary2, Size2) ->
-    Size1 > 0 andalso Size2 > 0
-        andalso Size1 >= Size2 andalso Binary2 =:= binary_part(Binary1, 0, Size2).
-
-suffix(Binary1, Size1, Binary2, Size2) ->
-    Size1 > 0 andalso Size2 > 0
-        andalso Size1 >= Size2 andalso Binary2 =:= binary_part(Binary1, Size1, -Size2).
-
-
-binary_to_words(_Bianry, _Start, Length, _Endianness, List)
-  when Length < ?WORD(1) ->
-    lists:reverse(List);
-binary_to_words(Binary, Start, Length, Endianness, List) ->
-    W = binary_to_word(Binary, Start, Endianness),
-    binary_to_words(Binary, Start+?WORD(1), Length-?WORD(1), Endianness, [W|List]).
-
-words_to_binary([], _Endianness, List) ->
-    list_to_binary(lists:reverse(List));
-words_to_binary([H|T], Endianness, List) ->
-    words_to_binary(T, Endianness, [word_to_binary(H, Endianness)|List]).

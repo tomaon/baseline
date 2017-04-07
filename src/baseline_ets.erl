@@ -58,7 +58,7 @@ delete_all_objects(Pid) ->
 insert(Pid, ObjectOrObjects) ->
     call(Pid, {insert, [ObjectOrObjects]}).
 
--spec insert_new(pid(), tuple()|[tuple()]) -> true.
+-spec insert_new(pid(), tuple()|[tuple()]) -> boolean().
 insert_new(Pid, ObjectOrObjects) ->
     call(Pid, {insert_new, [ObjectOrObjects]}).
 
