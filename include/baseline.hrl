@@ -3,7 +3,7 @@
 
 %% == define ==
 
--define(IS_ENDIANNESS(T), (big =:= T orelse little =:= T)).
+-define(IS_ENDIANNESS(T), (little =:= T orelse native =:= T orelse big =:= T)).
 -define(IS_NEG_INTEGER(T), (is_integer(T) andalso (0 > T))).
 -define(IS_NON_NEG_INTEGER(T), (is_integer(T) andalso (0 =< T))).
 -define(IS_ID(T), (not(is_pid(T)))).
@@ -14,7 +14,7 @@
 
 %% == type ==
 
--type(endianness() :: big|little).
+-type(endianness() :: little|native|big).
 -type(id() :: term()).
 
 -endif. % baseline
