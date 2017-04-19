@@ -4,9 +4,9 @@
 
 %% -- public --
 -export([children/1]).
--export([endianness/0]).
+-export([endianness/0, endianness/1]).
 -export([find/2, find/4]).
--export([get_all_env/0]).
+-export([get_all_env/0, get_all_env/1]).
 -export([version/1]).
 
 -behaviour(application).
@@ -31,23 +31,33 @@ children(SupRef)
 
 -spec endianness() -> endianness().
 endianness() ->
-    Env = get_all_env(),
+    endianness(self()).
+
+-spec endianness(pid()|module()) -> endianness().
+endianness(PidOrModule)
+  when is_pid(PidOrModule); is_atom(PidOrModule) ->
+    Env = get_all_env(PidOrModule),
     case is_list(Env) andalso lists:keyfind(endianness, 1, Env) of
         false ->
             case <<1:16/native>> of
                 <<1, 0>> -> little;
                 <<0, 1>> -> big
             end;
-        Endianness ->
-            Endianness
+        {_, V} when ?IS_ENDIANNESS(V) ->
+            V
     end.
 
 
 -spec get_all_env() -> [{atom(), term()}].
 get_all_env() ->
-    case application:get_application() of
+    get_all_env(self()).
+
+-spec get_all_env(pid()|module()) -> [{atom(), term()}].
+get_all_env(PidOrModule)
+  when is_pid(PidOrModule); is_atom(PidOrModule) ->
+    case application:get_application(PidOrModule) of
         {ok, Application} ->
-            application:get_all_env(Application);
+            lists:sort(application:get_all_env(Application));
         undefined ->
             undefined
     end.
